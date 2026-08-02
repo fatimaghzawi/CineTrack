@@ -31,6 +31,14 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify) => {
     }
 
     const statusCode = error.statusCode ?? 500;
+
+    if (statusCode === 429) {
+      request.log.warn({ err: error }, 'Rate limit exceeded');
+      return reply
+        .status(429)
+        .send(failure(error.message || 'Too many requests', ErrorCode.TOO_MANY_REQUESTS, 429));
+    }
+
     const isServerError = statusCode >= 500;
 
     if (isServerError) {
