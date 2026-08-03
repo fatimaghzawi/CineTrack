@@ -9,191 +9,259 @@ import { ToastService } from '@core/services/toast.service';
 import { Collection, TmdbMedia } from '@core/models/movie.model';
 import { PaginatedData } from '@core/models/api-response.model';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
+import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
+import { IconComponent } from '@shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-collections',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, SkeletonLoaderComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    DatePipe,
+    SkeletonLoaderComponent,
+    EmptyStateComponent,
+    IconComponent,
+  ],
   template: `
     <div class="page-container animate-fade-in">
-      <div class="flex items-center justify-between mb-6">
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-text-primary">Collections</h1>
-          <p class="text-text-secondary mt-1">Organize your titles into custom groups</p>
+          <h1 class="page-title">Collections</h1>
+          <p class="mt-1.5 text-sm text-text-secondary">
+            Organize your titles into custom groups
+          </p>
         </div>
-        <button (click)="showForm.set(!showForm())" class="btn-primary flex items-center gap-2">
-          @if (showForm()) {
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            Cancel
-          } @else {
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            New Collection
-          }
+
+        <button
+          type="button"
+          (click)="showForm.set(!showForm())"
+          [class]="showForm() ? 'btn-secondary' : 'btn-primary'"
+        >
+          <app-icon [name]="showForm() ? 'close' : 'plus'" class="w-4 h-4" />
+          {{ showForm() ? 'Cancel' : 'New Collection' }}
         </button>
       </div>
 
       <!-- Create form -->
       @if (showForm()) {
-        <div class="card p-6 mb-8 animate-slide-up">
-          <h3 class="text-lg font-semibold text-text-primary mb-5">Create Collection</h3>
+        <div class="panel p-5 sm:p-6 mb-7 animate-slide-up">
+          <h3 class="section-title mb-5">Create Collection</h3>
 
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-medium text-text-secondary mb-2">Name</label>
-              <input
-                type="text"
-                [(ngModel)]="formName"
-                placeholder="e.g. Best Sci-Fi of the Decade"
-                class="input-field"
-                maxlength="100"
-              />
-            </div>
+          <div>
+            <label for="c-name" class="label">Name</label>
+            <input
+              id="c-name"
+              type="text"
+              [(ngModel)]="formName"
+              placeholder="e.g. Best Sci-Fi of the Decade"
+              class="input-field"
+              maxlength="100"
+            />
+          </div>
 
-            <div>
-              <label class="block text-sm font-medium text-text-secondary mb-2">Description</label>
-              <textarea
-                [(ngModel)]="formDesc"
-                placeholder="What's this collection about?"
-                rows="3"
-                class="input-field resize-none"
-                maxlength="1000"
-              ></textarea>
-            </div>
+          <div class="mt-5">
+            <label for="c-desc" class="label">Description</label>
+            <textarea
+              id="c-desc"
+              [(ngModel)]="formDesc"
+              placeholder="What's this collection about?"
+              rows="3"
+              class="input-field resize-none"
+              maxlength="1000"
+            ></textarea>
+          </div>
 
-            <label class="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                [(ngModel)]="formPublic"
-                class="w-5 h-5 rounded bg-surface-elevated border-surface-elevated text-primary focus:ring-primary"
-              />
-              <span class="text-sm text-text-secondary">Make this collection public</span>
-            </label>
+          <label class="flex items-center gap-3 cursor-pointer mt-5">
+            <input
+              type="checkbox"
+              [(ngModel)]="formPublic"
+              class="w-4 h-4 rounded border-surface-elevated bg-surface-card"
+            />
+            <span class="text-sm text-text-secondary">Make this collection public</span>
+          </label>
 
-            <div class="flex justify-end gap-3">
-              <button (click)="showForm.set(false)" class="btn-ghost">Cancel</button>
-              <button (click)="createCollection()" [disabled]="saving()" class="btn-primary">
-                {{ saving() ? 'Creating...' : 'Create' }}
-              </button>
-            </div>
+          <div class="flex justify-end gap-3 mt-6">
+            <button type="button" (click)="showForm.set(false)" class="btn-ghost">Cancel</button>
+            <button
+              type="button"
+              (click)="createCollection()"
+              [disabled]="saving()"
+              class="btn-primary"
+            >
+              {{ saving() ? 'Creating...' : 'Create' }}
+            </button>
           </div>
         </div>
       }
 
-      <!-- Collections grid -->
+      <!-- Grid -->
       @if (loading()) {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          @for (i of [1,2,3]; track i) {
-            <app-skeleton height="200px" className="rounded-2xl" />
+        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          @for (i of [1, 2, 3]; track i) {
+            <app-skeleton height="228px" className="rounded-2xl" />
           }
         </div>
       } @else if (collections().length === 0) {
-        <div class="text-center py-20">
-          <div class="text-5xl mb-4">📁</div>
-          <h3 class="text-xl font-semibold text-text-primary mb-2">No collections yet</h3>
-          <p class="text-text-secondary mb-6">Create your first collection to organize titles</p>
-        </div>
+        <app-empty-state
+          icon="folder"
+          title="No collections yet"
+          message="Group your favourite titles into themed collections — start with your first one."
+        />
       } @else {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           @for (collection of collections(); track collection.id) {
-            <div class="card-hover p-5 cursor-pointer group" (click)="selectCollection(collection)">
-              <!-- Cover mosaic -->
-              <div class="relative h-32 rounded-xl overflow-hidden mb-4 bg-surface-elevated">
-                @if (collection.coverTmdbId && coverCache().get(collection.coverTmdbId); as coverMedia) {
+            <button
+              type="button"
+              (click)="selectCollection(collection)"
+              class="panel p-4 text-left group transition-all duration-300 ease-smooth
+                     hover:border-primary/40 hover:-translate-y-0.5"
+            >
+              <!-- Cover -->
+              <div class="relative h-32 rounded-xl overflow-hidden bg-surface-card">
+                @if (collection.coverTmdbId && coverCache().get(collection.coverTmdbId); as cover) {
                   <img
-                    [src]="tmdb.posterUrl(coverMedia.poster_path, 'w500')"
-                    class="w-full h-full object-cover"
+                    [src]="tmdb.posterUrl(cover.poster_path, 'w500')"
+                    alt=""
+                    class="w-full h-full object-cover transition-transform duration-500
+                           ease-smooth group-hover:scale-105"
+                    loading="lazy"
                   />
-                  <div class="absolute inset-0 bg-gradient-to-t from-surface-deep/80 to-transparent"></div>
+                  <div class="absolute inset-0 bg-card-scrim"></div>
                 } @else {
-                  <div class="w-full h-full flex items-center justify-center">
-                    <span class="text-4xl">📁</span>
-                  </div>
-                }
-                <div class="absolute bottom-2 right-2">
-                  <span class="badge-primary text-xs">
-                    {{ collection.items.length }} title{{ collection.items.length !== 1 ? 's' : '' }}
+                  <span class="w-full h-full grid place-items-center text-text-muted">
+                    <app-icon name="folder" class="w-8 h-8" />
                   </span>
-                </div>
+                }
+
+                <span class="badge-primary absolute bottom-2 right-2">
+                  {{ collection.items.length }} title{{ collection.items.length === 1 ? '' : 's' }}
+                </span>
               </div>
 
-              <h3 class="font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
+              <h3
+                class="mt-4 font-semibold text-text-primary truncate transition-colors
+                       group-hover:text-primary"
+              >
                 {{ collection.name }}
               </h3>
+
               @if (collection.description) {
-                <p class="text-sm text-text-muted mt-1 line-clamp-2">{{ collection.description }}</p>
+                <p class="mt-1 text-[13px] text-text-muted line-clamp-2">
+                  {{ collection.description }}
+                </p>
               }
-              <div class="flex items-center justify-between mt-3">
-                <span class="text-xs text-text-muted">{{ collection.createdAt | date:'mediumDate' }}</span>
-                <div class="flex items-center gap-1">
-                  @if (collection.isPublic) {
-                    <span class="text-xs text-text-muted">🌐 Public</span>
-                  } @else {
-                    <span class="text-xs text-text-muted">🔒 Private</span>
-                  }
-                </div>
+
+              <div class="flex items-center justify-between gap-2 mt-3">
+                <span class="text-2xs text-text-muted">
+                  {{ collection.createdAt | date: 'mediumDate' }}
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-2xs text-text-muted">
+                  <app-icon [name]="collection.isPublic ? 'globe' : 'lock'" class="w-3.5 h-3.5" />
+                  {{ collection.isPublic ? 'Public' : 'Private' }}
+                </span>
               </div>
-            </div>
+            </button>
           }
         </div>
       }
 
-      <!-- Collection detail modal -->
+      <!-- Detail dialog -->
       @if (selectedCollection(); as col) {
-        <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" (click)="selectedCollection.set(null)">
-          <div class="bg-surface-dark rounded-2xl border border-surface-elevated max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 animate-scale-in" (click)="$event.stopPropagation()">
-            <div class="flex items-center justify-between mb-5">
-              <h2 class="text-2xl font-bold text-text-primary">{{ col.name }}</h2>
-              <div class="flex items-center gap-2">
+        <div
+          class="fixed inset-0 z-50 grid place-items-center p-4 bg-black/75 backdrop-blur-sm
+                 animate-fade-in"
+          (click)="selectedCollection.set(null)"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            class="w-full max-w-2xl max-h-[82vh] overflow-y-auto p-5 sm:p-6
+                   bg-surface-dark border border-hairline rounded-3xl shadow-pop animate-scale-in"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-start justify-between gap-4 mb-5">
+              <div class="min-w-0">
+                <h2 class="text-xl sm:text-2xl font-bold font-display text-text-primary truncate">
+                  {{ col.name }}
+                </h2>
+                <p class="mt-1 text-2xs text-text-muted inline-flex items-center gap-1.5">
+                  <app-icon [name]="col.isPublic ? 'globe' : 'lock'" class="w-3.5 h-3.5" />
+                  {{ col.isPublic ? 'Public' : 'Private' }}
+                  <span class="mx-0.5">·</span>
+                  {{ col.items.length }} title{{ col.items.length === 1 ? '' : 's' }}
+                </p>
+              </div>
+
+              <div class="flex items-center gap-1 shrink-0">
                 <button
+                  type="button"
                   (click)="deleteCollection(col)"
-                  class="p-2 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-all"
+                  aria-label="Delete collection"
+                  class="btn-round hover:!text-red-400 hover:!bg-red-500/10"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
+                  <app-icon name="trash" class="w-[18px] h-[18px]" />
                 </button>
                 <button
+                  type="button"
                   (click)="selectedCollection.set(null)"
-                  class="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-card transition-all"
+                  aria-label="Close"
+                  class="btn-round"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
+                  <app-icon name="close" class="w-[18px] h-[18px]" />
                 </button>
               </div>
             </div>
+
             @if (col.description) {
-              <p class="text-text-secondary mb-5">{{ col.description }}</p>
+              <p class="text-sm leading-relaxed text-text-secondary mb-5">{{ col.description }}</p>
             }
 
             @if (col.items.length === 0) {
-              <p class="text-text-muted text-center py-8">No items in this collection yet.</p>
+              <p class="py-10 text-center text-sm text-text-muted">
+                No items in this collection yet.
+              </p>
             } @else {
-              <div class="space-y-3">
+              <ul class="space-y-2.5">
                 @for (item of col.items; track item.tmdbId) {
-                  <a
-                    [routerLink]="'/' + item.mediaType + '/' + item.tmdbId"
-                    (click)="selectedCollection.set(null)"
-                    class="flex items-center gap-3 p-3 rounded-xl bg-surface-card hover:bg-surface-elevated transition-all"
-                  >
-                    <div class="w-10 h-14 rounded-lg overflow-hidden bg-surface-elevated flex-shrink-0">
-                      @if (coverCache().get(item.tmdbId); as media) {
-                        <img [src]="tmdb.posterUrl(media.poster_path, 'w185')" class="w-full h-full object-cover" />
-                      }
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-text-primary truncate">
-                        {{ coverCache().get(item.tmdbId)?.title || coverCache().get(item.tmdbId)?.name || 'TMDb #' + item.tmdbId }}
-                      </p>
-                      <p class="text-xs text-text-muted uppercase">{{ item.mediaType }}</p>
-                    </div>
-                  </a>
+                  <li>
+                    <a
+                      [routerLink]="'/' + item.mediaType + '/' + item.tmdbId"
+                      (click)="selectedCollection.set(null)"
+                      class="flex items-center gap-3.5 p-2.5 rounded-xl bg-surface-card
+                             border border-hairline transition-all duration-200 ease-smooth
+                             hover:border-primary/40"
+                    >
+                      <span
+                        class="w-10 h-14 shrink-0 rounded-lg overflow-hidden bg-surface-elevated"
+                      >
+                        @if (coverCache().get(item.tmdbId); as media) {
+                          <img
+                            [src]="tmdb.posterUrl(media.poster_path, 'w185')"
+                            alt=""
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        }
+                      </span>
+                      <span class="flex-1 min-w-0">
+                        <span class="block text-[13.5px] font-medium text-text-primary truncate">
+                          {{
+                            coverCache().get(item.tmdbId)?.title ||
+                              coverCache().get(item.tmdbId)?.name ||
+                              'TMDb #' + item.tmdbId
+                          }}
+                        </span>
+                        <span class="block text-2xs text-text-muted uppercase tracking-wide">
+                          {{ item.mediaType }}
+                        </span>
+                      </span>
+                      <app-icon name="chevron-right" class="w-4 h-4 text-text-muted shrink-0" />
+                    </a>
+                  </li>
                 }
-              </div>
+              </ul>
             }
           </div>
         </div>

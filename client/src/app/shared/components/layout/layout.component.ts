@@ -9,26 +9,22 @@ import { NavbarComponent } from '../navbar/navbar.component';
   standalone: true,
   imports: [RouterOutlet, SidebarComponent, NavbarComponent],
   template: `
-    <div class="flex h-screen overflow-hidden bg-surface-deep">
-      <!-- Sidebar -->
-      <app-sidebar
-        [collapsed]="sidebarCollapsed()"
-        (toggle)="sidebarCollapsed.set(!sidebarCollapsed())"
-      />
+    <div class="min-h-screen bg-surface-deep lg:flex">
+      <app-sidebar [open]="menuOpen()" (navigate)="menuOpen.set(false)" />
 
-      <!-- Mobile overlay -->
-      @if (!sidebarCollapsed()) {
+      <!-- Mobile scrim -->
+      @if (menuOpen()) {
         <div
-          class="fixed inset-0 bg-black/60 z-20 lg:hidden"
-          (click)="sidebarCollapsed.set(true)"
+          class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm lg:hidden animate-fade-in"
+          (click)="menuOpen.set(false)"
+          aria-hidden="true"
         ></div>
       }
 
-      <!-- Main area -->
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <app-navbar (menuClick)="sidebarCollapsed.set(!sidebarCollapsed())" />
+      <div class="flex-1 min-w-0 flex flex-col">
+        <app-navbar (menuClick)="menuOpen.set(!menuOpen())" />
 
-        <main class="flex-1 overflow-y-auto">
+        <main class="flex-1 min-w-0">
           <router-outlet />
         </main>
       </div>
@@ -36,5 +32,5 @@ import { NavbarComponent } from '../navbar/navbar.component';
   `,
 })
 export class LayoutComponent {
-  sidebarCollapsed = signal(false);
+  menuOpen = signal(false);
 }

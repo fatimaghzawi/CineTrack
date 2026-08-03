@@ -10,6 +10,8 @@ import { ToastService } from '@core/services/toast.service';
 import { JournalEntry, TmdbMedia } from '@core/models/movie.model';
 import { PaginatedData } from '@core/models/api-response.model';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
+import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
+import { IconComponent } from '@shared/components/icon/icon.component';
 import { TruncatePipe } from '@shared/pipes/truncate.pipe';
 
 const MOODS = [
@@ -26,144 +28,203 @@ const MOODS = [
 @Component({
   selector: 'app-journal',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, SkeletonLoaderComponent, TruncatePipe],
+  imports: [
+    FormsModule,
+    RouterLink,
+    DatePipe,
+    SkeletonLoaderComponent,
+    EmptyStateComponent,
+    IconComponent,
+    TruncatePipe,
+  ],
   template: `
     <div class="page-container animate-fade-in">
-      <div class="flex items-center justify-between mb-6">
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-text-primary">Journal</h1>
-          <p class="text-text-secondary mt-1">Your personal movie diary</p>
+          <h1 class="page-title">Journal</h1>
+          <p class="mt-1.5 text-sm text-text-secondary">Your personal movie diary</p>
         </div>
-        <button (click)="showForm.set(!showForm())" class="btn-primary flex items-center gap-2">
-          @if (showForm()) {
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            Cancel
-          } @else {
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            New Entry
-          }
+
+        <button
+          type="button"
+          (click)="showForm.set(!showForm())"
+          [class]="showForm() ? 'btn-secondary' : 'btn-primary'"
+        >
+          <app-icon [name]="showForm() ? 'close' : 'plus'" class="w-4 h-4" />
+          {{ showForm() ? 'Cancel' : 'New Entry' }}
         </button>
       </div>
 
+      <!-- Composer -->
       @if (showForm()) {
-        <div class="card p-6 mb-8 animate-slide-up">
-          <h3 class="text-lg font-semibold text-text-primary mb-5">Write a Journal Entry</h3>
+        <div class="panel p-5 sm:p-6 mb-7 animate-slide-up">
+          <h3 class="section-title mb-5">Write a Journal Entry</h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div class="grid gap-5 sm:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-text-secondary mb-2">TMDb ID</label>
-              <input type="number" [(ngModel)]="form.tmdbId" placeholder="e.g. 550" class="input-field" />
+              <label for="j-tmdb" class="label">TMDb ID</label>
+              <input
+                id="j-tmdb"
+                type="number"
+                [(ngModel)]="form.tmdbId"
+                placeholder="e.g. 550"
+                class="input-field"
+              />
             </div>
             <div>
-              <label class="block text-sm font-medium text-text-secondary mb-2">Type</label>
-              <select [(ngModel)]="form.mediaType" class="input-field">
-                <option value="movie">Movie</option>
-                <option value="tv">TV Show</option>
-              </select>
+              <label for="j-type" class="label">Type</label>
+              <div class="relative">
+                <select id="j-type" [(ngModel)]="form.mediaType" class="select-field w-full">
+                  <option value="movie">Movie</option>
+                  <option value="tv">TV Show</option>
+                </select>
+                <app-icon
+                  name="chevron-down"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="mb-5">
-            <label class="block text-sm font-medium text-text-secondary mb-2">Title</label>
-            <input type="text" [(ngModel)]="form.title" placeholder="Give your entry a title" class="input-field" />
+          <div class="mt-5">
+            <label for="j-title" class="label">Title</label>
+            <input
+              id="j-title"
+              type="text"
+              [(ngModel)]="form.title"
+              placeholder="Give your entry a title"
+              class="input-field"
+            />
           </div>
 
-          <div class="mb-5">
-            <label class="block text-sm font-medium text-text-secondary mb-2">Your Thoughts</label>
-            <textarea [(ngModel)]="form.body" placeholder="What did you think?" rows="5" class="input-field resize-none"></textarea>
+          <div class="mt-5">
+            <label for="j-body" class="label">Your Thoughts</label>
+            <textarea
+              id="j-body"
+              [(ngModel)]="form.body"
+              placeholder="What did you think?"
+              rows="5"
+              class="input-field resize-none"
+            ></textarea>
           </div>
 
-          <div class="mb-5">
-            <label class="block text-sm font-medium text-text-secondary mb-3">Mood</label>
+          <div class="mt-5">
+            <span class="label">Mood</span>
             <div class="flex flex-wrap gap-2">
               @for (mood of moods; track mood.label) {
                 <button
+                  type="button"
                   (click)="form.mood = mood.label"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all"
-                  [class]="form.mood === mood.label
-                    ? 'bg-primary/15 text-primary border border-primary/30'
-                    : 'bg-surface-elevated text-text-secondary border border-transparent hover:border-surface-elevated'"
+                  class="chip !h-9"
+                  [class]="
+                    form.mood === mood.label
+                      ? 'bg-primary/15 text-primary ring-1 ring-primary/40'
+                      : 'bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                  "
                 >
-                  <span>{{ mood.emoji }}</span>
-                  <span>{{ mood.label }}</span>
+                  <span aria-hidden="true">{{ mood.emoji }}</span>
+                  {{ mood.label }}
                 </button>
               }
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div class="grid gap-5 sm:grid-cols-2 mt-5">
             <div>
-              <label class="block text-sm font-medium text-text-secondary mb-2">Watched On</label>
-              <input type="date" [(ngModel)]="form.watchedAt" class="input-field" />
+              <label for="j-date" class="label">Watched On</label>
+              <input id="j-date" type="date" [(ngModel)]="form.watchedAt" class="input-field" />
             </div>
             <div class="flex items-end">
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" [(ngModel)]="form.isSpoiler"
-                  class="w-5 h-5 rounded bg-surface-elevated border-surface-elevated text-primary focus:ring-primary" />
+              <label class="flex items-center gap-3 cursor-pointer h-11">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="form.isSpoiler"
+                  class="w-4 h-4 rounded border-surface-elevated bg-surface-card"
+                />
                 <span class="text-sm text-text-secondary">Contains spoilers</span>
               </label>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3">
-            <button (click)="showForm.set(false)" class="btn-ghost">Cancel</button>
-            <button (click)="createEntry()" [disabled]="saving()" class="btn-primary">
+          <div class="flex justify-end gap-3 mt-6">
+            <button type="button" (click)="showForm.set(false)" class="btn-ghost">Cancel</button>
+            <button type="button" (click)="createEntry()" [disabled]="saving()" class="btn-primary">
               {{ saving() ? 'Saving...' : 'Save Entry' }}
             </button>
           </div>
         </div>
       }
 
+      <!-- Entries -->
       @if (loading()) {
         <div class="space-y-4">
-          @for (i of [1,2,3,4]; track i) {
-            <app-skeleton height="120px" className="rounded-2xl" />
+          @for (i of [1, 2, 3, 4]; track i) {
+            <app-skeleton height="128px" className="rounded-2xl" />
           }
         </div>
       } @else if (entries().length === 0) {
-        <div class="text-center py-20">
-          <div class="text-5xl mb-4">📓</div>
-          <h3 class="text-xl font-semibold text-text-primary mb-2">No journal entries yet</h3>
-          <p class="text-text-secondary mb-6">Start writing about your movie experiences</p>
-        </div>
+        <app-empty-state
+          icon="book"
+          title="No journal entries yet"
+          message="Start writing about the films and shows you watch — they'll appear here."
+        />
       } @else {
         <div class="space-y-4">
           @for (entry of entries(); track entry.id) {
-            <div class="card p-5 hover:border-primary/20 transition-all">
-              <div class="flex items-start justify-between mb-3">
-                <div class="flex items-center gap-3">
+            <article class="panel p-4 sm:p-5 transition-colors duration-200 hover:border-primary/30">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-start gap-3.5 min-w-0">
                   @if (mediaCache().get(entry.tmdbId); as media) {
-                    <a [routerLink]="'/' + entry.mediaType + '/' + entry.tmdbId"
-                      class="flex-shrink-0 w-10 h-14 rounded-lg overflow-hidden bg-surface-elevated">
-                      <img [src]="tmdb.posterUrl(media.poster_path, 'w185')" class="w-full h-full object-cover" />
+                    <a
+                      [routerLink]="'/' + entry.mediaType + '/' + entry.tmdbId"
+                      class="shrink-0 w-11 h-16 rounded-lg overflow-hidden bg-surface-card
+                             ring-1 ring-hairline hover:ring-primary/50 transition-all"
+                    >
+                      <img
+                        [src]="tmdb.posterUrl(media.poster_path, 'w185')"
+                        [alt]="tmdb.getTitle(media)"
+                        class="w-full h-full object-cover"
+                        loading="lazy"
+                      />
                     </a>
                   }
-                  <div>
-                    <h3 class="font-semibold text-text-primary">{{ entry.title || 'Untitled' }}</h3>
-                    <div class="flex items-center gap-2 mt-1">
+
+                  <div class="min-w-0">
+                    <h3 class="font-semibold text-text-primary truncate">
+                      {{ entry.title || 'Untitled' }}
+                    </h3>
+                    <div class="flex flex-wrap items-center gap-2 mt-1.5">
                       @if (entry.mood) {
-                        <span class="badge-primary text-xs">{{ getMoodEmoji(entry.mood) }} {{ entry.mood }}</span>
+                        <span class="badge-primary">
+                          <span aria-hidden="true">{{ getMoodEmoji(entry.mood) }}</span>
+                          {{ entry.mood }}
+                        </span>
                       }
                       @if (entry.isSpoiler) {
-                        <span class="badge bg-red-500/15 text-red-400 text-xs">Spoiler</span>
+                        <span class="badge-dropped">Spoiler</span>
                       }
-                      <span class="text-xs text-text-muted">{{ entry.createdAt | date:'mediumDate' }}</span>
+                      <span class="text-2xs text-text-muted">
+                        {{ entry.createdAt | date: 'mediumDate' }}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <button (click)="deleteEntry(entry)"
-                  class="p-2 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-all">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
+
+                <button
+                  type="button"
+                  (click)="deleteEntry(entry)"
+                  aria-label="Delete entry"
+                  class="btn-round h-9 w-9 shrink-0 hover:!text-red-400 hover:!bg-red-500/10"
+                >
+                  <app-icon name="trash" class="w-4 h-4" />
                 </button>
               </div>
-              <p class="text-text-secondary text-sm leading-relaxed">{{ entry.body | truncate:300 }}</p>
-            </div>
+
+              <p class="mt-3.5 text-[13.5px] leading-relaxed text-text-secondary">
+                {{ entry.body | truncate: 300 }}
+              </p>
+            </article>
           }
         </div>
       }
@@ -213,9 +274,8 @@ export class JournalComponent implements OnInit {
   }
 
   private fetchMedia(tmdbId: number, mediaType: string): void {
-    const obs: Observable<any> = mediaType === 'movie'
-      ? this.tmdb.getMovie(tmdbId)
-      : this.tmdb.getTv(tmdbId);
+    const obs: Observable<any> =
+      mediaType === 'movie' ? this.tmdb.getMovie(tmdbId) : this.tmdb.getTv(tmdbId);
 
     obs.subscribe((media: any) => {
       this.mediaCache.update((c) => {

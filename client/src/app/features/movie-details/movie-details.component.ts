@@ -1,6 +1,4 @@
 import { Component, OnInit, signal, input } from '@angular/core';
-import { SlicePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
 
 import { TmdbService } from '@core/services/tmdb.service';
 import { WatchlistService } from '@core/services/watchlist.service';
@@ -8,122 +6,148 @@ import { FavoritesService } from '@core/services/favorites.service';
 import { ToastService } from '@core/services/toast.service';
 import { TmdbMovieDetails, TmdbMedia } from '@core/models/movie.model';
 import { MovieCardComponent } from '@shared/components/movie-card/movie-card.component';
-import { RatingStarsComponent } from '@shared/components/rating-stars/rating-stars.component';
-import { TruncatePipe } from '@shared/pipes/truncate.pipe';
+import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
+import { IconComponent } from '@shared/components/icon/icon.component';
 
 type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
 
 @Component({
   selector: 'app-movie-details',
   standalone: true,
-  imports: [SlicePipe, RouterLink, MovieCardComponent, RatingStarsComponent, TruncatePipe],
+  imports: [MovieCardComponent, EmptyStateComponent, IconComponent],
   template: `
     @if (movie(); as m) {
       <div class="animate-fade-in">
-        <div class="page-container">
-          <button (click)="goBack()" class="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            <span class="text-sm">Back</span>
+        <!-- Ambient backdrop wash -->
+        @if (m.backdrop_path) {
+          <div class="absolute inset-x-0 top-0 h-[420px] pointer-events-none overflow-hidden">
+            <img
+              [src]="tmdb.backdropUrl(m.backdrop_path)"
+              alt=""
+              aria-hidden="true"
+              class="w-full h-full object-cover opacity-[0.18]"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-b from-surface-deep/40 via-surface-deep/80 to-surface-deep"
+            ></div>
+          </div>
+        }
+
+        <div class="relative page-container">
+          <button
+            type="button"
+            (click)="goBack()"
+            class="btn-round -ml-2 mb-5 hover:bg-surface-card"
+            aria-label="Go back"
+          >
+            <app-icon name="chevron-left" class="w-5 h-5" />
           </button>
 
-          <div class="flex flex-col lg:flex-row gap-8">
-            <div class="flex-shrink-0">
-              <img
-                [src]="tmdb.posterUrl(m.poster_path, 'w500')"
-                [alt]="m.title"
-                class="w-64 rounded-2xl shadow-2xl shadow-black/40 border border-surface-elevated/30"
-              />
-            </div>
+          <div class="flex flex-col sm:flex-row gap-6 lg:gap-8">
+            <!-- Poster -->
+            <img
+              [src]="tmdb.posterUrl(m.poster_path, 'w500')"
+              [alt]="m.title"
+              class="w-40 sm:w-52 lg:w-[220px] shrink-0 rounded-xl object-cover
+                     ring-1 ring-hairline shadow-pop self-start"
+            />
 
-            <div class="flex-1">
-              <h1 class="text-3xl lg:text-4xl font-bold text-text-primary mb-2">{{ m.title }}</h1>
+            <!-- Meta -->
+            <div class="flex-1 min-w-0">
+              <h1
+                class="font-display font-extrabold tracking-tight text-text-primary
+                       text-2xl sm:text-3xl lg:text-4xl"
+              >
+                {{ m.title }}
+              </h1>
 
-              <div class="flex flex-wrap items-center gap-2 text-sm text-text-muted mb-4">
-                <span>{{ getYear(m.release_date) }}</span>
-                <span>·</span>
-                <span>{{ formatRuntime(m.runtime) }}</span>
+              <p class="mt-2 text-[13px] text-text-secondary">
+                {{ getYear(m.release_date) }}
+                <span class="mx-1.5 text-text-muted">·</span>
+                {{ formatRuntime(m.runtime) }}
                 @if (m.status) {
-                  <span>·</span>
-                  <span>{{ m.status }}</span>
+                  <span class="mx-1.5 text-text-muted">·</span>
+                  {{ m.status }}
                 }
-              </div>
+              </p>
 
-              <div class="flex items-center gap-3 mb-5">
-                <div class="flex items-center gap-1.5">
-                  <svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                  </svg>
+              <!-- Rating -->
+              <div class="mt-3 flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5">
+                  <app-icon name="star" class="w-[18px] h-[18px] text-primary" />
                   <span class="font-bold text-text-primary">{{ m.vote_average.toFixed(1) }}</span>
-                </div>
-                <div class="flex items-center gap-1 text-text-muted">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                  </svg>
-                  <span class="text-sm">{{ formatVoteCount(m.vote_count) }}</span>
-                </div>
+                </span>
+                <span class="badge-neutral">
+                  <app-icon name="users" class="w-3 h-3" />
+                  {{ formatVoteCount(m.vote_count) }}
+                </span>
               </div>
 
-              <div class="flex items-center gap-3 mb-6">
+              <!-- Actions -->
+              <div class="mt-5 flex flex-wrap items-center gap-3">
                 @if (trailerKey()) {
                   <a
                     [href]="'https://www.youtube.com/watch?v=' + trailerKey()"
                     target="_blank"
-                    class="flex items-center gap-2 bg-surface-card border border-surface-elevated rounded-xl px-5 py-2.5 text-sm font-medium text-text-primary hover:border-primary/50 transition-all"
+                    rel="noopener"
+                    class="btn-primary"
                   >
-                    <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
-                    </svg>
+                    <app-icon name="play" class="w-4 h-4" />
                     Play
                   </a>
                 }
-                <button (click)="addToWatchlist()" class="btn-primary !py-2.5 flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                  </svg>
+                <button type="button" (click)="addToWatchlist()" class="btn-outline">
+                  <app-icon name="plus" class="w-4 h-4" />
                   Watchlist
                 </button>
                 <button
+                  type="button"
                   (click)="addToFavorites()"
-                  class="w-10 h-10 rounded-xl bg-surface-card border border-surface-elevated flex items-center justify-center hover:border-primary/50 transition-all text-text-muted hover:text-primary"
+                  class="btn-icon"
+                  aria-label="Add to favorites"
+                  title="Add to favorites"
                 >
-                  ❤️
+                  <app-icon name="heart" class="w-[18px] h-[18px]" />
                 </button>
               </div>
 
-              <p class="text-text-secondary leading-relaxed mb-6">{{ m.overview }}</p>
+              @if (m.overview) {
+                <p class="mt-6 text-sm leading-relaxed text-text-secondary max-w-2xl">
+                  {{ m.overview }}
+                </p>
+              }
 
-              <div class="space-y-3 mb-6">
+              <!-- Credits table -->
+              <dl class="mt-6 space-y-2.5 max-w-2xl">
                 @if (getDirector()) {
-                  <div class="flex gap-8">
-                    <span class="text-sm text-text-muted w-20 flex-shrink-0">Director</span>
-                    <span class="text-sm text-text-primary">{{ getDirector() }}</span>
+                  <div class="flex gap-4 sm:gap-8">
+                    <dt class="w-16 sm:w-20 shrink-0 text-[13px] text-text-muted">Director</dt>
+                    <dd class="text-[13px] text-text-primary">{{ getDirector() }}</dd>
                   </div>
                 }
                 @if (m.credits?.cast?.length) {
-                  <div class="flex gap-8">
-                    <span class="text-sm text-text-muted w-20 flex-shrink-0">Cast</span>
-                    <span class="text-sm text-text-primary">{{ getTopCastNames() }}</span>
+                  <div class="flex gap-4 sm:gap-8">
+                    <dt class="w-16 sm:w-20 shrink-0 text-[13px] text-text-muted">Cast</dt>
+                    <dd class="text-[13px] text-text-primary">{{ getTopCastNames() }}</dd>
                   </div>
                 }
-                @if (m.genres?.length) {
-                  <div class="flex gap-8">
-                    <span class="text-sm text-text-muted w-20 flex-shrink-0">Genre</span>
-                    <span class="text-sm text-text-primary">{{ getGenreNames() }}</span>
+                @if (m.genres.length) {
+                  <div class="flex gap-4 sm:gap-8">
+                    <dt class="w-16 sm:w-20 shrink-0 text-[13px] text-text-muted">Genre</dt>
+                    <dd class="text-[13px] text-text-primary">{{ getGenreNames() }}</dd>
                   </div>
                 }
-              </div>
+              </dl>
 
-              <div class="border-b border-surface-elevated/50">
-                <div class="flex gap-6">
+              <!-- Tabs -->
+              <div class="mt-7 border-b border-hairline">
+                <div class="flex gap-6 overflow-x-auto scrollbar-none">
                   @for (tab of detailTabs; track tab.key) {
                     <button
+                      type="button"
                       (click)="activeTab.set(tab.key)"
-                      class="pb-3 text-sm font-medium transition-all border-b-2"
-                      [class]="activeTab() === tab.key
-                        ? 'text-text-primary border-primary'
-                        : 'text-text-muted border-transparent hover:text-text-secondary'"
+                      class="tab"
+                      [class.tab-active]="activeTab() === tab.key"
                     >
                       {{ tab.label }}
                     </button>
@@ -133,67 +157,96 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
             </div>
           </div>
 
-          <div class="mt-8 pb-10">
+          <!-- Tab panels -->
+          <div class="mt-7 pb-10">
             @switch (activeTab()) {
               @case ('overview') {
-                @if (movie()!.tagline) {
-                  <p class="text-primary italic text-lg mb-4">"{{ movie()!.tagline }}"</p>
+                @if (m.tagline) {
+                  <p class="text-primary italic text-base sm:text-lg mb-5">"{{ m.tagline }}"</p>
                 }
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  @if (movie()!.budget) {
+                  @if (m.budget) {
                     <div class="card p-4">
-                      <p class="text-xs text-text-muted mb-1">Budget</p>
-                      <p class="text-lg font-bold text-text-primary">\${{ formatMoney(movie()!.budget) }}</p>
+                      <p class="text-xs text-text-muted">Budget</p>
+                      <p class="mt-1.5 text-lg font-bold font-display text-text-primary">
+                        \${{ formatMoney(m.budget) }}
+                      </p>
                     </div>
                   }
-                  @if (movie()!.revenue) {
+                  @if (m.revenue) {
                     <div class="card p-4">
-                      <p class="text-xs text-text-muted mb-1">Revenue</p>
-                      <p class="text-lg font-bold text-text-primary">\${{ formatMoney(movie()!.revenue) }}</p>
+                      <p class="text-xs text-text-muted">Revenue</p>
+                      <p class="mt-1.5 text-lg font-bold font-display text-text-primary">
+                        \${{ formatMoney(m.revenue) }}
+                      </p>
                     </div>
                   }
                   <div class="card p-4">
-                    <p class="text-xs text-text-muted mb-1">Runtime</p>
-                    <p class="text-lg font-bold text-text-primary">{{ formatRuntime(movie()!.runtime) }}</p>
+                    <p class="text-xs text-text-muted">Runtime</p>
+                    <p class="mt-1.5 text-lg font-bold font-display text-text-primary">
+                      {{ formatRuntime(m.runtime) }}
+                    </p>
                   </div>
                   <div class="card p-4">
-                    <p class="text-xs text-text-muted mb-1">Rating</p>
-                    <p class="text-lg font-bold text-primary">{{ movie()!.vote_average.toFixed(1) }}/10</p>
+                    <p class="text-xs text-text-muted">Rating</p>
+                    <p class="mt-1.5 text-lg font-bold font-display text-primary">
+                      {{ m.vote_average.toFixed(1) }}/10
+                    </p>
                   </div>
                 </div>
               }
+
               @case ('cast') {
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  @for (member of movie()!.credits?.cast?.slice(0, 18) ?? []; track member.id) {
+                <div class="grid gap-5 grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
+                  @for (member of m.credits?.cast?.slice(0, 18) ?? []; track member.id) {
                     <div class="text-center">
-                      <div class="w-20 h-20 rounded-full overflow-hidden mx-auto mb-2 bg-surface-card">
+                      <div
+                        class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full overflow-hidden
+                               bg-surface-card ring-1 ring-hairline"
+                      >
                         @if (member.profile_path) {
-                          <img [src]="tmdb.posterUrl(member.profile_path, 'w185')" [alt]="member.name"
-                            class="w-full h-full object-cover" loading="lazy" />
+                          <img
+                            [src]="tmdb.posterUrl(member.profile_path, 'w185')"
+                            [alt]="member.name"
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                          />
                         } @else {
-                          <div class="w-full h-full flex items-center justify-center text-2xl text-text-muted">👤</div>
+                          <span class="w-full h-full grid place-items-center text-text-muted">
+                            <app-icon name="user" class="w-6 h-6" />
+                          </span>
                         }
                       </div>
-                      <p class="text-xs font-medium text-text-primary truncate">{{ member.name }}</p>
-                      <p class="text-xs text-text-muted truncate">{{ member.character }}</p>
+                      <p class="mt-2 text-xs font-semibold text-text-primary truncate">
+                        {{ member.name }}
+                      </p>
+                      <p class="text-2xs text-text-muted truncate">{{ member.character }}</p>
                     </div>
                   }
                 </div>
               }
+
               @case ('reviews') {
-                <div class="text-center py-12">
-                  <p class="text-text-muted">Reviews will appear here when you add them via the Journal.</p>
-                </div>
+                <app-empty-state
+                  icon="book"
+                  title="No reviews yet"
+                  message="Reviews appear here once you write about this title in your Journal."
+                />
               }
+
               @case ('similar') {
-                @if (movie()!.recommendations?.results?.length) {
-                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    @for (rec of movie()!.recommendations!.results.slice(0, 12); track rec.id) {
+                @if (m.recommendations?.results?.length) {
+                  <div class="poster-grid">
+                    @for (rec of m.recommendations!.results.slice(0, 12); track rec.id) {
                       <app-movie-card [media]="withType(rec, 'movie')" />
                     }
                   </div>
                 } @else {
-                  <p class="text-text-muted text-center py-12">No similar titles found.</p>
+                  <app-empty-state
+                    icon="compass"
+                    title="No similar titles"
+                    message="We couldn't find related recommendations for this movie."
+                  />
                 }
               }
             }
@@ -201,8 +254,12 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
         </div>
       </div>
     } @else {
-      <div class="page-container flex items-center justify-center min-h-[60vh]">
-        <div class="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+      <div class="page-container grid place-items-center min-h-[60vh]">
+        <span
+          class="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"
+          role="status"
+          aria-label="Loading"
+        ></span>
       </div>
     }
   `,
@@ -240,7 +297,9 @@ export class MovieDetailsComponent implements OnInit {
     });
   }
 
-  goBack(): void { history.back(); }
+  goBack(): void {
+    history.back();
+  }
 
   getYear(date: string | undefined): string {
     return date ? date.substring(0, 4) : '—';
@@ -256,7 +315,10 @@ export class MovieDetailsComponent implements OnInit {
   getTopCastNames(): string {
     const cast = this.movie()?.credits?.cast;
     if (!cast) return '';
-    return cast.slice(0, 3).map((c) => c.name).join(', ');
+    return cast
+      .slice(0, 3)
+      .map((c) => c.name)
+      .join(', ');
   }
 
   getGenreNames(): string {

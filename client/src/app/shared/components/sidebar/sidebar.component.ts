@@ -2,128 +2,127 @@ import { Component, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '@core/services/auth.service';
+import { IconComponent, IconName } from '@shared/components/icon/icon.component';
+import { LogoComponent } from '@shared/components/logo/logo.component';
 
 interface NavItem {
   label: string;
-  icon: string;
+  icon: IconName;
   route: string;
+  exact?: boolean;
 }
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, IconComponent, LogoComponent],
   template: `
     <aside
-      class="fixed lg:static z-30 h-full flex flex-col bg-surface-dark border-r border-surface-elevated/50 transition-all duration-300"
-      [class]="collapsed() ? '-translate-x-full lg:translate-x-0 lg:w-[72px]' : 'translate-x-0 w-[240px]'"
+      class="fixed lg:sticky top-0 z-40 h-screen w-64 shrink-0 flex flex-col
+             bg-surface-dark border-r border-hairline
+             transition-transform duration-300 ease-smooth"
+      [class]="open() ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
     >
-      <!-- Logo -->
-      <div class="flex items-center gap-3 px-5 h-16 border-b border-surface-elevated/50">
-        <div class="w-8 h-8 rounded-lg bg-gold-gradient flex items-center justify-center flex-shrink-0">
-          <svg class="w-4.5 h-4.5 text-surface-deep" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z" />
-          </svg>
-        </div>
-        @if (!collapsed()) {
-          <span class="text-base font-bold text-text-primary tracking-tight">
-            Cine<span class="text-primary">Track</span>
-          </span>
-        }
+      <!-- Brand -->
+      <div class="h-16 flex items-center justify-between gap-2 px-5 shrink-0">
+        <a routerLink="/dashboard" (click)="navigate.emit()" aria-label="CineTrack home">
+          <app-logo size="md" />
+        </a>
+        <button
+          type="button"
+          class="btn-round lg:hidden -mr-2"
+          (click)="navigate.emit()"
+          aria-label="Close menu"
+        >
+          <app-icon name="close" class="w-5 h-5" />
+        </button>
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+      <nav class="flex-1 overflow-y-auto px-3 pb-4 space-y-1 scrollbar-none">
         @for (item of mainNav; track item.route) {
           <a
             [routerLink]="item.route"
-            routerLinkActive="!bg-primary/10 !text-primary !border-l-primary"
-            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary
-                   hover:bg-surface-card hover:text-text-primary transition-all duration-200
-                   border-l-2 border-transparent"
-            [class.justify-center]="collapsed()"
-            [attr.title]="collapsed() ? item.label : null"
+            [routerLinkActiveOptions]="{ exact: !!item.exact }"
+            routerLinkActive="nav-item-active"
+            (click)="navigate.emit()"
+            class="nav-item"
           >
-            <span class="text-[18px] flex-shrink-0 w-5 text-center" [innerHTML]="item.icon"></span>
-            @if (!collapsed()) {
-              <span class="text-[13px] font-medium">{{ item.label }}</span>
-            }
+            <app-icon [name]="item.icon" class="w-[18px] h-[18px]" />
+            <span class="truncate">{{ item.label }}</span>
           </a>
         }
 
-        <!-- Divider -->
-        <div class="!my-3 border-t border-surface-elevated/50"></div>
+        <div class="divider !my-3 mx-3"></div>
 
-        @for (item of secondaryNav; track item.route) {
+        @for (item of libraryNav; track item.route) {
           <a
             [routerLink]="item.route"
-            routerLinkActive="!bg-primary/10 !text-primary !border-l-primary"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary
-                   hover:bg-surface-card hover:text-text-primary transition-all duration-200
-                   border-l-2 border-transparent"
-            [class.justify-center]="collapsed()"
-            [attr.title]="collapsed() ? item.label : null"
+            routerLinkActive="nav-item-active"
+            (click)="navigate.emit()"
+            class="nav-item"
           >
-            <span class="text-[18px] flex-shrink-0 w-5 text-center" [innerHTML]="item.icon"></span>
-            @if (!collapsed()) {
-              <span class="text-[13px] font-medium">{{ item.label }}</span>
-            }
+            <app-icon [name]="item.icon" class="w-[18px] h-[18px]" />
+            <span class="truncate">{{ item.label }}</span>
           </a>
         }
       </nav>
 
-      <!-- User profile section at bottom -->
-      <div class="p-3 border-t border-surface-elevated/50">
+      <!-- User card -->
+      <div class="p-3 shrink-0">
         <a
           routerLink="/settings"
-          routerLinkActive="text-primary"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary
-                 hover:bg-surface-card hover:text-text-primary transition-all duration-200"
-          [class.justify-center]="collapsed()"
+          (click)="navigate.emit()"
+          class="group flex items-center gap-3 rounded-xl bg-surface-card border border-hairline
+                 p-2.5 transition-all duration-200 ease-smooth hover:border-primary/40"
         >
-          <div class="w-8 h-8 rounded-full bg-gold-gradient flex items-center justify-center text-xs font-bold text-surface-deep flex-shrink-0">
+          <span
+            class="grid place-items-center h-9 w-9 rounded-full bg-gold-gradient
+                   text-[13px] font-bold text-surface-deep shrink-0"
+          >
             {{ userInitial() }}
-          </div>
-          @if (!collapsed()) {
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-text-primary truncate">{{ auth.user()?.displayName }}</p>
-              <p class="text-xs text-text-muted">View Profile</p>
-            </div>
-            <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          }
+          </span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-[13.5px] font-semibold text-text-primary truncate">
+              {{ auth.user()?.displayName || 'Guest' }}
+            </span>
+            <span class="block text-2xs text-text-muted">View Profile</span>
+          </span>
+          <app-icon
+            name="chevron-up"
+            class="w-4 h-4 text-text-muted group-hover:text-primary transition-colors"
+          />
         </a>
       </div>
     </aside>
   `,
 })
 export class SidebarComponent {
-  collapsed = input(false);
-  toggle = output<void>();
+  /** Drawer visibility on mobile; the rail is always shown from `lg` up. */
+  open = input(false);
+  /** Emitted whenever a link is used so the shell can close the mobile drawer. */
+  navigate = output<void>();
 
   mainNav: NavItem[] = [
-    { label: 'Home', icon: '🏠', route: '/dashboard' },
-    { label: 'Explore', icon: '🧭', route: '/discover' },
-    { label: 'Movies', icon: '🎬', route: '/movies' },
-    { label: 'TV Shows', icon: '📺', route: '/tv-shows' },
-    { label: 'Watchlist', icon: '📋', route: '/watchlist' },
-    { label: 'Calendar', icon: '📅', route: '/calendar' },
+    { label: 'Home', icon: 'home', route: '/dashboard', exact: true },
+    { label: 'Explore', icon: 'compass', route: '/discover' },
+    { label: 'Movies', icon: 'film', route: '/movies' },
+    { label: 'TV Shows', icon: 'tv', route: '/tv-shows' },
+    { label: 'Watchlist', icon: 'bookmark', route: '/watchlist' },
+    { label: 'Calendar', icon: 'calendar', route: '/calendar' },
   ];
 
-  secondaryNav: NavItem[] = [
-    { label: 'Stats', icon: '📊', route: '/statistics' },
-    { label: 'Journal', icon: '📓', route: '/journal' },
-    { label: 'Collections', icon: '📁', route: '/collections' },
-    { label: 'Favorites', icon: '❤️', route: '/favorites' },
-    { label: 'Settings', icon: '⚙️', route: '/settings' },
+  libraryNav: NavItem[] = [
+    { label: 'Favorites', icon: 'heart', route: '/favorites' },
+    { label: 'Journal', icon: 'book', route: '/journal' },
+    { label: 'Collections', icon: 'folder', route: '/collections' },
+    { label: 'Stats', icon: 'chart', route: '/statistics' },
+    { label: 'Settings', icon: 'settings', route: '/settings' },
   ];
 
   constructor(public auth: AuthService) {}
 
   userInitial(): string {
-    const name = this.auth.user()?.displayName ?? '?';
-    return name.charAt(0).toUpperCase();
+    return (this.auth.user()?.displayName ?? '?').charAt(0).toUpperCase();
   }
 }

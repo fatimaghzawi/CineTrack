@@ -2,7 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+/* ═══════════════════════════════════════════════════════════════
+   CineTrack design system
+   Palette (do not deviate):
+     #FFC107 Primary Yellow  · brand, CTAs, highlights
+     #D4A017 Accent Gold     · hover states, icons, accents
+     #121212 Deep Black      · app background, text-on-primary
+     #1E1E1E Dark Gray       · sidebar, topbar, section panels
+     #2C2C2E Card Gray       · cards, tiles, inputs, chips
+   ═══════════════════════════════════════════════════════════════ */
 
 @layer base {
   * {
@@ -13,103 +21,297 @@
 
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-surface-deep text-text-primary font-body antialiased;
     min-height: 100vh;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Scrollbars ------------------------------------------------- */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-surface-deep;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
     @apply bg-surface-elevated rounded-full;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-text-muted;
+    background-clip: content-box;
   }
 
   ::selection {
     @apply bg-primary/30 text-white;
   }
+
+  /* Focus ring ------------------------------------------------- */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary/60 ring-offset-2 ring-offset-surface-deep rounded-lg;
+  }
+
+  /* Native control theming ------------------------------------- */
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  select option {
+    @apply bg-surface-card text-text-primary;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    accent-color: #ffc107;
+  }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-primary text-surface-deep font-semibold px-6 py-3 rounded-xl
-           hover:bg-primary-hover active:scale-[0.98] transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
+  /* ── Surfaces ───────────────────────────────────────────────── */
+
+  /* Section panel — #1E1E1E, the big rounded containers */
+  .panel {
+    @apply bg-surface-dark border border-hairline rounded-2xl;
   }
 
-  .btn-outline {
-    @apply border border-surface-elevated text-text-primary px-6 py-3 rounded-xl
-           hover:border-primary hover:text-primary transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-ghost {
-    @apply text-text-secondary px-4 py-2 rounded-lg
-           hover:bg-surface-card hover:text-text-primary transition-all duration-200;
-  }
-
-  .input-field {
-    @apply w-full bg-surface-card border border-surface-elevated rounded-xl
-           px-4 py-3 text-text-primary placeholder:text-text-muted
-           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30
-           transition-all duration-200;
-  }
-
+  /* Card / tile — #2C2C2E, elevated content inside panels */
   .card {
-    @apply bg-surface-card rounded-2xl border border-surface-elevated/50
-           transition-all duration-300;
+    @apply bg-surface-card border border-hairline rounded-xl transition-all duration-300 ease-smooth;
   }
 
   .card-hover {
-    @apply card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5
-           hover:-translate-y-1;
+    @apply card hover:border-primary/40 hover:shadow-panel hover:-translate-y-0.5;
+  }
+
+  .glass {
+    @apply bg-surface-dark/85 backdrop-blur-xl border border-hairline;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 h-11
+           text-sm font-semibold whitespace-nowrap
+           transition-all duration-200 ease-smooth
+           active:scale-[0.97]
+           disabled:opacity-45 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-surface-deep hover:bg-accent-gold shadow-glow hover:shadow-none;
+  }
+
+  .btn-outline {
+    @apply btn border border-surface-elevated bg-transparent text-text-primary
+           hover:border-primary hover:text-primary;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface-card border border-hairline text-text-primary
+           hover:bg-surface-elevated;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-text-secondary px-4
+           hover:bg-surface-card hover:text-text-primary;
+  }
+
+  .btn-danger {
+    @apply btn bg-transparent border border-red-500/30 text-red-400
+           hover:bg-red-500/10 hover:border-red-500/50;
+  }
+
+  .btn-sm {
+    @apply h-9 px-4 text-[13px];
+  }
+
+  /* Square icon button */
+  .btn-icon {
+    @apply inline-flex items-center justify-center h-11 w-11 rounded-lg shrink-0
+           border border-surface-elevated text-text-secondary
+           transition-all duration-200 ease-smooth
+           hover:border-primary hover:text-primary active:scale-[0.97];
+  }
+
+  /* Round icon button (topbar bell / avatar affordances) */
+  .btn-round {
+    @apply inline-flex items-center justify-center h-10 w-10 rounded-full shrink-0
+           text-text-secondary transition-all duration-200 ease-smooth
+           hover:bg-surface-card hover:text-text-primary;
+  }
+
+  /* Circular play overlay used on media artwork */
+  .play-fab {
+    @apply inline-flex items-center justify-center rounded-full
+           bg-surface-deep/55 backdrop-blur-md ring-1 ring-white/25 text-white
+           transition-all duration-200 ease-smooth
+           hover:bg-primary hover:text-surface-deep hover:ring-primary;
+  }
+
+  /* ── Form controls ──────────────────────────────────────────── */
+  .label {
+    @apply block text-[13px] font-medium text-text-secondary mb-2;
+  }
+
+  .input-field {
+    @apply w-full bg-surface-card border border-hairline rounded-lg
+           px-4 h-11 text-sm text-text-primary placeholder:text-text-muted
+           transition-all duration-200 ease-smooth
+           focus:outline-none focus:ring-0 focus:border-primary/70;
+  }
+
+  textarea.input-field {
+    @apply h-auto py-3 leading-relaxed;
+  }
+
+  /* Native select styled as the reference dropdown */
+  .select-field {
+    @apply appearance-none bg-surface-card border border-hairline rounded-lg
+           pl-4 pr-10 h-11 text-sm text-text-secondary cursor-pointer
+           transition-all duration-200 ease-smooth
+           focus:outline-none focus:border-primary/70 hover:text-text-primary;
+  }
+
+  /* Rounded search field from the topbar */
+  .search-field {
+    @apply w-full bg-surface-card border border-hairline rounded-full
+           pl-11 pr-4 h-10 text-sm text-text-primary placeholder:text-text-muted
+           transition-all duration-200 ease-smooth
+           focus:outline-none focus:border-primary/60;
+  }
+
+  /* ── Chips / pills / badges ─────────────────────────────────── */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-4 h-9
+           text-[13px] font-semibold whitespace-nowrap
+           transition-all duration-200 ease-smooth;
+  }
+
+  .chip-active {
+    @apply chip bg-primary text-surface-deep;
+  }
+
+  .chip-idle {
+    @apply chip bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-elevated;
   }
 
   .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-semibold;
   }
 
   .badge-primary {
     @apply badge bg-primary/15 text-primary;
   }
 
+  .badge-neutral {
+    @apply badge bg-surface-elevated text-text-secondary;
+  }
+
+  /* Status badges stay on-palette: weight carries the meaning, not hue.
+     Only "dropped" borrows red, as a genuine destructive signal. */
   .badge-watching {
-    @apply badge bg-blue-500/15 text-blue-400;
+    @apply badge bg-primary/15 text-primary;
   }
 
   .badge-completed {
-    @apply badge bg-green-500/15 text-green-400;
+    @apply badge bg-primary text-surface-deep;
   }
 
   .badge-plan {
-    @apply badge bg-purple-500/15 text-purple-400;
+    @apply badge bg-surface-elevated text-text-secondary;
   }
 
   .badge-dropped {
     @apply badge bg-red-500/15 text-red-400;
   }
 
-  .section-title {
-    @apply text-2xl font-bold text-text-primary;
+  /* Yellow "watched" check dot pinned to poster corners */
+  .check-dot {
+    @apply inline-flex items-center justify-center h-6 w-6 rounded-full
+           bg-primary text-surface-deep shadow-card;
   }
 
+  /* ── Navigation ─────────────────────────────────────────────── */
+  .nav-item {
+    @apply relative flex items-center gap-3 h-11 rounded-lg px-3
+           text-[13.5px] font-medium text-text-secondary
+           transition-all duration-200 ease-smooth
+           hover:bg-surface-card hover:text-text-primary;
+  }
+
+  .nav-item-active {
+    @apply bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary;
+  }
+
+  /* Yellow indicator bar on the active sidebar row */
+  .nav-item-active::before {
+    content: "";
+    @apply absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full bg-primary;
+  }
+
+  /* Horizontal underline tabs (details pages) */
+  .tab {
+    @apply relative pb-3 text-sm font-semibold whitespace-nowrap
+           border-b-2 border-transparent text-text-muted
+           transition-all duration-200 ease-smooth hover:text-text-secondary;
+  }
+
+  .tab-active {
+    @apply text-text-primary border-primary hover:text-text-primary;
+  }
+
+  /* ── Layout ─────────────────────────────────────────────────── */
   .page-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+    @apply w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8;
   }
 
-  .glass {
-    @apply bg-surface-dark/80 backdrop-blur-xl border border-surface-elevated/30;
+  .page-title {
+    @apply text-2xl sm:text-3xl font-bold text-text-primary;
+  }
+
+  .section-title {
+    @apply text-lg sm:text-xl font-bold text-text-primary;
+  }
+
+  .divider {
+    @apply border-t border-hairline;
+  }
+
+  /* Responsive poster grid — 6 across on desktop, per reference */
+  .poster-grid {
+    @apply grid gap-4 sm:gap-5
+           grid-cols-2 min-[420px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6;
+  }
+
+  /* Dashed "Add More" placeholder tile */
+  .add-tile {
+    @apply flex flex-col items-center justify-center gap-3
+           rounded-xl border border-dashed border-surface-elevated
+           text-text-muted transition-all duration-200 ease-smooth
+           hover:border-primary/60 hover:text-primary hover:bg-surface-card/40;
   }
 }
 
@@ -118,30 +320,53 @@
     @apply bg-gold-gradient bg-clip-text text-transparent;
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-out;
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 
-  .animate-scale-in {
-    animation: scaleIn 0.2s ease-out;
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Shimmering skeleton block */
+  .skeleton {
+    @apply relative overflow-hidden bg-surface-card;
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

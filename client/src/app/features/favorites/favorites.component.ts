@@ -8,43 +8,59 @@ import { ToastService } from '@core/services/toast.service';
 import { FavoriteItem, TmdbMedia } from '@core/models/movie.model';
 import { MovieCardComponent } from '@shared/components/movie-card/movie-card.component';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
+import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
+import { IconComponent } from '@shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-favorites',
   standalone: true,
-  imports: [RouterLink, MovieCardComponent, SkeletonLoaderComponent],
+  imports: [
+    RouterLink,
+    MovieCardComponent,
+    SkeletonLoaderComponent,
+    EmptyStateComponent,
+    IconComponent,
+  ],
   template: `
     <div class="page-container animate-fade-in">
-      <h1 class="text-3xl font-bold text-text-primary mb-2">Favorites</h1>
-      <p class="text-text-secondary mb-8">{{ items().length }} titles you love</p>
+      <h1 class="page-title">Favorites</h1>
+      <p class="mt-1.5 text-sm text-text-secondary mb-7">
+        {{ items().length }} title{{ items().length === 1 ? '' : 's' }} you love
+      </p>
 
       @if (loading()) {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          @for (i of [1,2,3,4,5,6]; track i) {
-            <app-skeleton height="280px" className="rounded-xl" />
+        <div class="poster-grid">
+          @for (i of skeletons; track i) {
+            <app-skeleton className="aspect-[2/3] w-full" />
           }
         </div>
       } @else if (items().length === 0) {
-        <div class="text-center py-20">
-          <div class="text-5xl mb-4">❤️</div>
-          <h3 class="text-xl font-semibold text-text-primary mb-2">No favorites yet</h3>
-          <p class="text-text-secondary mb-6">Mark movies and shows as favorites from their detail pages</p>
+        <app-empty-state
+          icon="heart"
+          title="No favorites yet"
+          message="Mark movies and shows as favorites from their detail pages and they'll gather here."
+          [hasAction]="true"
+        >
           <a routerLink="/discover" class="btn-primary">Discover Now</a>
-        </div>
+        </app-empty-state>
       } @else {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div class="poster-grid">
           @for (item of items(); track item.id) {
             @if (mediaCache().get(item.tmdbId); as media) {
-              <div class="relative group">
+              <div class="relative group/fav">
                 <app-movie-card [media]="media" />
+
                 <button
+                  type="button"
                   (click)="removeFavorite(item)"
-                  class="absolute top-2 left-2 p-1.5 rounded-lg bg-surface-deep/80 backdrop-blur-sm
-                         text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all z-10"
+                  [attr.aria-label]="'Remove ' + tmdb.getTitle(media) + ' from favorites'"
+                  class="absolute top-2 left-2 z-10 grid place-items-center h-8 w-8 rounded-lg
+                         bg-surface-deep/85 backdrop-blur-md border border-hairline text-red-400
+                         opacity-0 group-hover/fav:opacity-100 focus:opacity-100
+                         hover:bg-red-500/20 hover:border-red-500/40
+                         transition-all duration-200 ease-smooth"
                 >
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
-                  </svg>
+                  <app-icon name="heart" [filled]="true" class="w-4 h-4" />
                 </button>
               </div>
             }
@@ -58,10 +74,11 @@ export class FavoritesComponent implements OnInit {
   items = signal<FavoriteItem[]>([]);
   mediaCache = signal<Map<number, TmdbMedia>>(new Map());
   loading = signal(true);
+  skeletons = Array.from({ length: 12 }, (_, i) => i);
 
   constructor(
     private favoritesService: FavoritesService,
-    private tmdb: TmdbService,
+    public tmdb: TmdbService,
     private toast: ToastService,
   ) {}
 
@@ -79,9 +96,8 @@ export class FavoritesComponent implements OnInit {
   }
 
   private fetchMedia(tmdbId: number, mediaType: string): void {
-    const obs: Observable<any> = mediaType === 'movie'
-      ? this.tmdb.getMovie(tmdbId)
-      : this.tmdb.getTv(tmdbId);
+    const obs: Observable<any> =
+      mediaType === 'movie' ? this.tmdb.getMovie(tmdbId) : this.tmdb.getTv(tmdbId);
 
     obs.subscribe((media: any) => {
       this.mediaCache.update((c) => {

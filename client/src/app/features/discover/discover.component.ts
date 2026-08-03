@@ -6,72 +6,87 @@ import { TmdbService } from '@core/services/tmdb.service';
 import { TmdbMedia } from '@core/models/movie.model';
 import { MovieCardComponent } from '@shared/components/movie-card/movie-card.component';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
+import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
+import { IconComponent } from '@shared/components/icon/icon.component';
 
 type Tab = 'all' | 'movies' | 'tv';
 
 @Component({
   selector: 'app-discover',
   standalone: true,
-  imports: [FormsModule, MovieCardComponent, SkeletonLoaderComponent],
+  imports: [
+    FormsModule,
+    MovieCardComponent,
+    SkeletonLoaderComponent,
+    EmptyStateComponent,
+    IconComponent,
+  ],
   template: `
     <div class="page-container animate-fade-in">
-      <h1 class="text-3xl font-bold text-text-primary mb-2">Discover</h1>
-      <p class="text-text-secondary mb-6">Explore movies and TV shows</p>
+      <h1 class="page-title">Discover</h1>
+      <p class="mt-1.5 text-sm text-text-secondary">Explore movies and TV shows</p>
 
-      <!-- Search bar -->
-      <div class="relative max-w-xl mb-8">
-        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
+      <!-- Search -->
+      <div class="relative max-w-xl mt-6">
+        <app-icon
+          name="search"
+          class="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-text-muted pointer-events-none"
+        />
         <input
-          type="text"
+          type="search"
+          name="discoverSearch"
           [(ngModel)]="searchQuery"
           (ngModelChange)="onSearchChange($event)"
           placeholder="Search movies or TV shows..."
-          class="input-field pl-12 text-base"
+          aria-label="Search movies or TV shows"
+          class="input-field pl-12 h-12"
         />
       </div>
 
-      <!-- Tabs -->
-      <div class="flex gap-2 mb-8">
+      <!-- Type chips -->
+      <div class="flex gap-2 mt-5 mb-7 overflow-x-auto scrollbar-none -mx-1 px-1 py-0.5">
         @for (tab of tabs; track tab.key) {
           <button
+            type="button"
             (click)="activeTab.set(tab.key); loadContent()"
-            class="px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200"
-            [class]="activeTab() === tab.key
-              ? 'bg-primary text-surface-deep'
-              : 'bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-elevated'"
+            [class]="activeTab() === tab.key ? 'chip-active' : 'chip-idle'"
           >
             {{ tab.label }}
           </button>
         }
       </div>
 
-      <!-- Results grid -->
       @if (loading()) {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div class="poster-grid">
           @for (i of skeletons; track i) {
-            <app-skeleton height="280px" className="rounded-2xl" />
+            <app-skeleton className="aspect-[2/3] w-full" />
           }
         </div>
       } @else if (results().length === 0) {
-        <div class="text-center py-20">
-          <div class="text-5xl mb-4">🎬</div>
-          <h3 class="text-xl font-semibold text-text-primary mb-2">No results found</h3>
-          <p class="text-text-secondary">Try a different search term or browse trending</p>
-        </div>
+        <app-empty-state
+          icon="film"
+          title="No results found"
+          message="Try a different search term, or switch tabs to browse what's trending."
+        />
       } @else {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div class="poster-grid">
           @for (item of results(); track item.id) {
             <app-movie-card [media]="item" />
           }
         </div>
 
-        <!-- Load more -->
         @if (hasMore()) {
-          <div class="flex justify-center mt-8 pb-8">
-            <button (click)="loadMore()" class="btn-outline" [disabled]="loadingMore()">
-              {{ loadingMore() ? 'Loading...' : 'Load More' }}
+          <div class="flex justify-center mt-8 pb-4">
+            <button type="button" (click)="loadMore()" class="btn-outline" [disabled]="loadingMore()">
+              @if (loadingMore()) {
+                <span
+                  class="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"
+                ></span>
+                Loading...
+              } @else {
+                Load More
+                <app-icon name="chevron-down" class="w-4 h-4" />
+              }
             </button>
           </div>
         }
@@ -144,10 +159,14 @@ export class DiscoverComponent implements OnInit {
       });
     } else if (tab === 'tv') {
       this.tmdb.discoverTv(page).subscribe({
-        next: (res) => this.handleResults(
-          res.results.map((r) => ({ ...r, media_type: 'tv' as const })),
-          res.total_pages, page, reset, tab,
-        ),
+        next: (res) =>
+          this.handleResults(
+            res.results.map((r) => ({ ...r, media_type: 'tv' as const })),
+            res.total_pages,
+            page,
+            reset,
+            tab,
+          ),
         error: () => this.handleError(reset),
       });
     } else {
@@ -158,10 +177,17 @@ export class DiscoverComponent implements OnInit {
     }
   }
 
-  private handleResults(items: TmdbMedia[], totalPages: number, page: number, reset: boolean, tab: Tab): void {
+  private handleResults(
+    items: TmdbMedia[],
+    totalPages: number,
+    page: number,
+    reset: boolean,
+    tab: Tab,
+  ): void {
     let filtered = items;
     if (tab === 'movies') filtered = items.filter((i) => (i.media_type || 'movie') === 'movie');
-    if (tab === 'tv') filtered = items.filter((i) => (i.media_type || (i.name ? 'tv' : 'movie')) === 'tv');
+    if (tab === 'tv')
+      filtered = items.filter((i) => (i.media_type || (i.name ? 'tv' : 'movie')) === 'tv');
 
     this.currentPage = page;
     this.totalPages = totalPages;

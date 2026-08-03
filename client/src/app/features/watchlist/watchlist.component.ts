@@ -14,6 +14,8 @@ import {
 } from '@core/models/movie.model';
 import { MovieCardComponent } from '@shared/components/movie-card/movie-card.component';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
+import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
+import { IconComponent } from '@shared/components/icon/icon.component';
 
 type FilterTab = 'all' | 'movie' | 'tv';
 
@@ -26,60 +28,74 @@ interface TabInfo {
 @Component({
   selector: 'app-watchlist',
   standalone: true,
-  imports: [RouterLink, FormsModule, MovieCardComponent, SkeletonLoaderComponent],
+  imports: [
+    RouterLink,
+    FormsModule,
+    MovieCardComponent,
+    SkeletonLoaderComponent,
+    EmptyStateComponent,
+    IconComponent,
+  ],
   template: `
     <div class="page-container animate-fade-in">
-      <h1 class="text-3xl font-bold text-text-primary mb-6">My Watchlist</h1>
+      <h1 class="page-title mb-6">My Watchlist</h1>
 
-      <!-- Filter tabs + sort -->
-      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div class="flex gap-2">
+      <!-- Media-type chips + sort -->
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div class="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 py-0.5">
           @for (tab of tabs(); track tab.key) {
             <button
+              type="button"
               (click)="activeTab.set(tab.key); applyFilter()"
-              class="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
-              [class]="activeTab() === tab.key
-                ? 'bg-primary text-surface-deep'
-                : 'bg-surface-card text-text-secondary hover:text-text-primary'"
+              [class]="activeTab() === tab.key ? 'chip-active' : 'chip-idle'"
             >
               {{ tab.label }} ({{ tab.count }})
             </button>
           }
         </div>
-        <div class="relative">
+
+        <div class="relative shrink-0">
           <select
             [(ngModel)]="sortBy"
             (ngModelChange)="applyFilter()"
-            class="appearance-none bg-surface-card border border-surface-elevated rounded-lg pl-3 pr-8 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary cursor-pointer"
+            aria-label="Sort watchlist"
+            class="select-field h-9 text-[13px]"
           >
             <option value="recent">Recently Added</option>
             <option value="rating">Highest Rated</option>
             <option value="title">Title A-Z</option>
           </select>
-          <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-          </svg>
+          <app-icon
+            name="chevron-down"
+            class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none"
+          />
         </div>
       </div>
 
-      <!-- Status filter pills -->
-      <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
+      <!-- Status filter -->
+      <div class="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1 mb-6">
         <button
+          type="button"
           (click)="statusFilter.set(undefined); applyFilter()"
-          class="px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
-          [class]="!statusFilter()
-            ? 'bg-primary/15 text-primary'
-            : 'text-text-muted hover:text-text-secondary'"
+          class="chip !h-8 !px-3 !text-xs"
+          [class]="
+            !statusFilter()
+              ? 'bg-primary/15 text-primary'
+              : 'text-text-muted hover:text-text-secondary hover:bg-surface-card'
+          "
         >
           All Status
         </button>
         @for (status of statuses; track status) {
           <button
+            type="button"
             (click)="statusFilter.set(status); applyFilter()"
-            class="px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
-            [class]="statusFilter() === status
-              ? 'bg-primary/15 text-primary'
-              : 'text-text-muted hover:text-text-secondary'"
+            class="chip !h-8 !px-3 !text-xs"
+            [class]="
+              statusFilter() === status
+                ? 'bg-primary/15 text-primary'
+                : 'text-text-muted hover:text-text-secondary hover:bg-surface-card'
+            "
           >
             {{ statusLabels[status] }}
           </button>
@@ -87,38 +103,53 @@ interface TabInfo {
       </div>
 
       @if (loading()) {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-          @for (i of [1,2,3,4,5,6,7,8]; track i) {
-            <app-skeleton height="260px" className="rounded-xl" />
+        <div class="poster-grid">
+          @for (i of skeletons; track i) {
+            <app-skeleton className="aspect-[2/3] w-full" />
           }
         </div>
       } @else if (filteredItems().length === 0 && items().length === 0) {
-        <div class="text-center py-20">
-          <div class="text-5xl mb-4">📋</div>
-          <h3 class="text-xl font-semibold text-text-primary mb-2">Your watchlist is empty</h3>
-          <p class="text-text-secondary mb-6">Start discovering movies and TV shows to add</p>
+        <app-empty-state
+          icon="bookmark"
+          title="Your watchlist is empty"
+          message="Start discovering movies and TV shows to add them here."
+          [hasAction]="true"
+        >
           <a routerLink="/discover" class="btn-primary">Discover Now</a>
-        </div>
+        </app-empty-state>
       } @else if (filteredItems().length === 0) {
-        <div class="text-center py-16">
-          <p class="text-text-secondary">No items match the current filter.</p>
-        </div>
+        <app-empty-state
+          icon="compass"
+          title="No matches"
+          message="No items match the current filter. Try a different tab or status."
+        />
       } @else {
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+        <div class="poster-grid">
           @for (item of filteredItems(); track item.id) {
             @if (mediaCache().get(item.tmdbId); as media) {
-              <div class="relative group">
+              <div class="relative group/row">
                 <app-movie-card
                   [media]="media"
                   [showWatchedBadge]="item.status === 'completed'"
                   [episodeInfo]="getEpisodeInfo(item)"
                 />
-                <div class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+
+                <!-- Inline status editor -->
+                <div
+                  class="absolute top-2 left-2 z-10 opacity-0 translate-y-1
+                         group-hover/row:opacity-100 group-hover/row:translate-y-0
+                         focus-within:opacity-100 focus-within:translate-y-0
+                         transition-all duration-200 ease-smooth"
+                >
                   <select
                     [value]="item.status"
-                    (change)="updateStatus(item, $event); $event.stopPropagation()"
+                    [attr.aria-label]="'Watch status'"
+                    (change)="updateStatus(item, $event)"
                     (click)="$event.stopPropagation(); $event.preventDefault()"
-                    class="bg-surface-deep/90 backdrop-blur-sm border border-surface-elevated rounded-lg px-2 py-1 text-xs text-text-primary focus:outline-none cursor-pointer"
+                    class="appearance-none rounded-lg bg-surface-deep/90 backdrop-blur-md
+                           border border-hairline px-2.5 h-7 text-2xs font-medium
+                           text-text-primary cursor-pointer focus:outline-none
+                           focus:border-primary/70"
                   >
                     @for (status of statuses; track status) {
                       <option [value]="status">{{ statusLabels[status] }}</option>
@@ -129,18 +160,15 @@ interface TabInfo {
             }
           }
 
-          <!-- Add More card -->
-          <a
-            routerLink="/discover"
-            class="aspect-[2/3] rounded-xl border-2 border-dashed border-surface-elevated hover:border-primary/50
-                   flex flex-col items-center justify-center gap-3 transition-all hover:bg-surface-card/30 group"
-          >
-            <div class="w-12 h-12 rounded-full bg-surface-card group-hover:bg-primary/15 flex items-center justify-center transition-colors">
-              <svg class="w-6 h-6 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
-            </div>
-            <span class="text-sm text-text-muted group-hover:text-primary transition-colors">Add More</span>
+          <!-- Add more -->
+          <a routerLink="/discover" class="add-tile aspect-[2/3] group/add">
+            <span
+              class="grid place-items-center h-12 w-12 rounded-full bg-surface-card
+                     transition-colors duration-200 group-hover/add:bg-primary/15"
+            >
+              <app-icon name="plus" class="w-5 h-5" />
+            </span>
+            <span class="text-[13px] font-medium">Add More</span>
           </a>
         </div>
       }
@@ -164,6 +192,7 @@ export class WatchlistComponent implements OnInit {
 
   statuses: WatchStatus[] = ['plan_to_watch', 'watching', 'completed', 'dropped'];
   statusLabels = WATCH_STATUS_LABELS;
+  skeletons = Array.from({ length: 12 }, (_, i) => i);
 
   constructor(
     private watchlistService: WatchlistService,
@@ -193,9 +222,8 @@ export class WatchlistComponent implements OnInit {
   }
 
   private fetchMedia(tmdbId: number, mediaType: string): void {
-    const obs: Observable<any> = mediaType === 'movie'
-      ? this.tmdb.getMovie(tmdbId)
-      : this.tmdb.getTv(tmdbId);
+    const obs: Observable<any> =
+      mediaType === 'movie' ? this.tmdb.getMovie(tmdbId) : this.tmdb.getTv(tmdbId);
 
     obs.subscribe((media: any) => {
       this.mediaCache.update((cache) => {
@@ -220,11 +248,13 @@ export class WatchlistComponent implements OnInit {
 
     const cache = this.mediaCache();
     if (this.sortBy === 'rating') {
-      result.sort((a, b) => (cache.get(b.tmdbId)?.vote_average ?? 0) - (cache.get(a.tmdbId)?.vote_average ?? 0));
+      result.sort(
+        (a, b) => (cache.get(b.tmdbId)?.vote_average ?? 0) - (cache.get(a.tmdbId)?.vote_average ?? 0),
+      );
     } else if (this.sortBy === 'title') {
       result.sort((a, b) => {
-        const titleA = this.tmdb.getTitle(cache.get(a.tmdbId) || {} as TmdbMedia);
-        const titleB = this.tmdb.getTitle(cache.get(b.tmdbId) || {} as TmdbMedia);
+        const titleA = this.tmdb.getTitle(cache.get(a.tmdbId) || ({} as TmdbMedia));
+        const titleB = this.tmdb.getTitle(cache.get(b.tmdbId) || ({} as TmdbMedia));
         return titleA.localeCompare(titleB);
       });
     }
