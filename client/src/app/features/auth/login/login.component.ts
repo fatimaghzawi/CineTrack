@@ -4,71 +4,55 @@ import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '@core/services/auth.service';
 import { ToastService } from '@core/services/toast.service';
-import { IconComponent } from '@shared/components/icon/icon.component';
-import { LogoComponent } from '@shared/components/logo/logo.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink, IconComponent, LogoComponent],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="min-h-screen lg:flex bg-surface-deep">
-      <!-- Brand panel -->
-      <aside
-        class="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12
-               bg-dark-gradient border-r border-hairline"
-      >
-        <div class="absolute inset-0 opacity-[0.14] pointer-events-none">
-          <div class="absolute top-16 left-16 w-80 h-80 rounded-full bg-primary blur-[140px]"></div>
-          <div
-            class="absolute bottom-16 right-10 w-96 h-96 rounded-full bg-accent-gold blur-[160px]"
-          ></div>
-        </div>
+      <!-- Brand panel: video background -->
+      <aside class="hidden lg:block lg:w-1/2 relative overflow-hidden border-r border-surface-elevated/50">
+        <video
+          class="absolute inset-0 w-full h-full object-cover"
+          autoplay
+          muted
+          loop
+          playsinline
+          poster="assets/videos/Cinetrack-poster.svg"
+        >
+          <source src="assets/videos/CineTrack.mp4" type="video/mp4" />
+        </video>
 
-        <div class="relative max-w-md">
-          <app-logo size="lg" [showWordmark]="false" />
+        <!-- Dark overlay for contrast -->
+        <div class="absolute inset-0 bg-surface-deep/50"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-surface-deep/30"></div>
 
-          <h1
-            class="mt-8 font-display font-extrabold tracking-tight leading-[0.95] text-5xl"
-          >
-            <span class="block text-text-primary">Track.</span>
-            <span class="block text-primary">Watch.</span>
-            <span class="block text-text-primary">Enjoy.</span>
-          </h1>
-
-          <p class="mt-6 text-[15px] leading-relaxed text-text-secondary">
-            Your personal movie and TV show tracker. Discover, organize, and relive your
-            entertainment journey.
-          </p>
-
-          <ul class="mt-8 space-y-3">
-            @for (perk of perks; track perk) {
-              <li class="flex items-center gap-3 text-[13.5px] text-text-secondary">
-                <span class="check-dot h-5 w-5 shrink-0">
-                  <app-icon name="check" class="w-3 h-3" [strokeWidth]="3.4" />
-                </span>
-                {{ perk }}
-              </li>
-            }
-          </ul>
+        <!-- Small logo mark, top-left -->
+        <div class="absolute top-8 left-8 flex items-center gap-2.5">
+          <img src="assets/images/Logo.png" alt="CineTrack" class="w-9 h-9 object-contain" />
+          <span class="text-lg font-bold text-text-primary tracking-tight">
+            Cine<span class="text-primary">Track</span>
+          </span>
         </div>
       </aside>
 
       <!-- Form -->
       <main class="flex-1 grid place-items-center p-6 sm:p-12">
         <div class="w-full max-w-md animate-fade-in">
-          <div class="lg:hidden mb-10">
-            <app-logo size="md" />
+          <!-- Mobile logo -->
+          <div class="lg:hidden flex items-center gap-2.5 mb-10">
+            <img src="assets/images/logo-icon.png" alt="CineTrack" class="w-10 h-10 object-contain" />
+            <span class="text-xl font-bold">Cine<span class="text-primary">Track</span></span>
           </div>
 
-          <h2 class="text-3xl font-bold font-display text-text-primary">Welcome back</h2>
-          <p class="mt-2 text-sm text-text-secondary mb-8">Sign in to continue your journey</p>
+          <h2 class="text-3xl font-bold text-text-primary mb-2">Welcome back</h2>
+          <p class="text-text-secondary mb-8">Sign in to continue your journey</p>
 
           <div class="space-y-5">
             <div>
-              <label for="l-email" class="label">Email</label>
+              <label class="block text-sm font-medium text-text-secondary mb-2">Email</label>
               <input
-                id="l-email"
                 type="email"
                 autocomplete="email"
                 [(ngModel)]="email"
@@ -79,10 +63,9 @@ import { LogoComponent } from '@shared/components/logo/logo.component';
             </div>
 
             <div>
-              <label for="l-password" class="label">Password</label>
+              <label class="block text-sm font-medium text-text-secondary mb-2">Password</label>
               <div class="relative">
                 <input
-                  id="l-password"
                   [type]="showPassword() ? 'text' : 'password'"
                   autocomplete="current-password"
                   [(ngModel)]="password"
@@ -93,35 +76,33 @@ import { LogoComponent } from '@shared/components/logo/logo.component';
                 <button
                   type="button"
                   (click)="showPassword.set(!showPassword())"
-                  [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-                  class="absolute right-1.5 top-1/2 -translate-y-1/2 btn-round h-8 w-8"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
                 >
-                  <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" class="w-[18px] h-[18px]" />
+                  {{ showPassword() ? '🙈' : '👁️' }}
                 </button>
               </div>
             </div>
 
             <button
-              type="button"
               (click)="onLogin()"
               [disabled]="loading()"
-              class="btn-primary w-full"
+              class="btn-primary w-full flex items-center justify-center gap-2"
             >
               @if (loading()) {
-                <span
-                  class="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"
-                ></span>
+                <svg class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
                 Signing in...
               } @else {
                 Sign In
-                <app-icon name="arrow-right" class="w-4 h-4" />
               }
             </button>
           </div>
 
-          <p class="mt-8 text-center text-sm text-text-secondary">
+          <p class="mt-8 text-center text-text-secondary text-sm">
             Don't have an account?
-            <a routerLink="/register" class="font-semibold text-primary hover:text-accent-gold transition-colors">
+            <a routerLink="/register" class="text-primary hover:text-primary-hover font-medium transition-colors">
               Create one
             </a>
           </p>
@@ -135,12 +116,6 @@ export class LoginComponent {
   password = '';
   loading = signal(false);
   showPassword = signal(false);
-
-  perks = [
-    'Track every movie and episode you watch',
-    'Build watchlists, collections and a journal',
-    'See your viewing stats at a glance',
-  ];
 
   constructor(
     private auth: AuthService,

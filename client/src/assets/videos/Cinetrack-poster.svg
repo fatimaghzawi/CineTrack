@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1080" width="960" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1E1E"/>
+      <stop offset="55%" stop-color="#121212"/>
+      <stop offset="100%" stop-color="#0A0A0A"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="30%" cy="20%" r="45%">
+      <stop offset="0%" stop-color="#FFC107" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFC107" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="75%" cy="80%" r="50%">
+      <stop offset="0%" stop-color="#D4A017" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#D4A017" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFC107"/>
+      <stop offset="100%" stop-color="#D4A017"/>
+    </linearGradient>
+    <linearGradient id="vignette" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.55"/>
+      <stop offset="35%" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Base background -->
+  <rect width="960" height="1080" fill="url(#bg)"/>
+  <rect width="960" height="1080" fill="url(#glow1)"/>
+  <rect width="960" height="1080" fill="url(#glow2)"/>
+
+  <!-- Faint film-strip perforations, left edge -->
+  <g fill="#2C2C2E" opacity="0.5">
+    <rect x="24" y="60" width="14" height="22" rx="3"/>
+    <rect x="24" y="110" width="14" height="22" rx="3"/>
+    <rect x="24" y="160" width="14" height="22" rx="3"/>
+    <rect x="24" y="210" width="14" height="22" rx="3"/>
+    <rect x="24" y="260" width="14" height="22" rx="3"/>
+    <rect x="24" y="820" width="14" height="22" rx="3"/>
+    <rect x="24" y="870" width="14" height="22" rx="3"/>
+    <rect x="24" y="920" width="14" height="22" rx="3"/>
+    <rect x="24" y="970" width="14" height="22" rx="3"/>
+    <rect x="24" y="1020" width="14" height="22" rx="3"/>
+  </g>
+  <g fill="#2C2C2E" opacity="0.5">
+    <rect x="922" y="60" width="14" height="22" rx="3"/>
+    <rect x="922" y="110" width="14" height="22" rx="3"/>
+    <rect x="922" y="160" width="14" height="22" rx="3"/>
+    <rect x="922" y="210" width="14" height="22" rx="3"/>
+    <rect x="922" y="260" width="14" height="22" rx="3"/>
+    <rect x="922" y="820" width="14" height="22" rx="3"/>
+    <rect x="922" y="870" width="14" height="22" rx="3"/>
+    <rect x="922" y="920" width="14" height="22" rx="3"/>
+    <rect x="922" y="970" width="14" height="22" rx="3"/>
+    <rect x="922" y="1020" width="14" height="22" rx="3"/>
+  </g>
+
+  <!-- Real logo mark -->
+  <image href="Cinetrack-logo-icon.png" x="330" y="290" width="300" height="252" preserveAspectRatio="xMidYMid meet"/>
+
+  <!-- Wordmark -->
+  <text x="480" y="620" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="64" font-weight="800" fill="#FFFFFF" letter-spacing="1">
+    Cine<tspan fill="url(#goldText)">Track</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="480" y="666" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="22" fill="#A1A1AA" letter-spacing="3">
+    TRACK · WATCH · ENJOY
+  </text>
+
+  <!-- Bottom vignette for text legibility once real video loads -->
+  <rect width="960" height="1080" fill="url(#vignette)"/>
+</svg>
