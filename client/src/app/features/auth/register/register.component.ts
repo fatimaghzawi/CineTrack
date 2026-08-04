@@ -42,7 +42,7 @@ import { ToastService } from '@core/services/toast.service';
         <div class="w-full max-w-md animate-fade-in">
           <!-- Mobile logo -->
           <div class="lg:hidden flex items-center gap-2.5 mb-10">
-            <img src="assets/images/logo-icon.png" alt="CineTrack" class="w-10 h-10 object-contain" />
+            <img src="assets/images/Logo.png" alt="CineTrack" class="w-10 h-10 object-contain" />
             <span class="text-xl font-bold">Cine<span class="text-primary">Track</span></span>
           </div>
 
