@@ -77,7 +77,7 @@ import { IconComponent } from '@shared/components/icon/icon.component';
         }
 
         <!-- Stats strip + carousel controls, overlapping the hero -->
-        <div class="relative z-10 -mt-24 sm:-mt-28 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative z-10 -mt-14 sm:-mt-16 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex flex-wrap items-end justify-between gap-6">
             <dl class="flex items-center gap-5 sm:gap-8 flex-wrap">
               @for (stat of heroStats; track stat.label; let last = $last) {
