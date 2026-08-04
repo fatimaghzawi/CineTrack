@@ -134,13 +134,9 @@ interface TabInfo {
                   [episodeInfo]="getEpisodeInfo(item)"
                 />
 
-                <!-- Inline status editor -->
-                <div
-                  class="absolute top-2 left-2 z-10 opacity-0 translate-y-1
-                         group-hover/row:opacity-100 group-hover/row:translate-y-0
-                         focus-within:opacity-100 focus-within:translate-y-0
-                         transition-all duration-200 ease-smooth"
-                >
+                <!-- Inline status editor — always visible; it was hover-only before,
+                     which made it undiscoverable on touch devices and easy to miss. -->
+                <div class="absolute top-2 left-2 z-10">
                   <select
                     [value]="item.status"
                     [attr.aria-label]="'Watch status'"

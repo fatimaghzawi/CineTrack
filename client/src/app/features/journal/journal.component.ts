@@ -303,9 +303,9 @@ export class JournalComponent implements OnInit {
     if (this.form.watchedAt) payload['watchedAt'] = new Date(this.form.watchedAt).toISOString();
     if (this.form.isSpoiler) payload['isSpoiler'] = true;
 
-    this.api.post<JournalEntry>('/journal', payload).subscribe({
+    this.api.post<{ entry: JournalEntry }>('/journal', payload).subscribe({
       next: (res) => {
-        this.entries.update((list) => [res.data, ...list]);
+        this.entries.update((list) => [res.data.entry, ...list]);
         this.resetForm();
         this.showForm.set(false);
         this.saving.set(false);

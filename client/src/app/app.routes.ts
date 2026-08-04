@@ -115,8 +115,8 @@ export const routes: Routes = [
       {
         path: 'calendar',
         loadComponent: () =>
-          import('./features/statistics/statistics.component').then(
-            (m) => m.StatisticsComponent
+          import('./features/calendar/calendar.component').then(
+            (m) => m.CalendarComponent
           ),
       },
       {

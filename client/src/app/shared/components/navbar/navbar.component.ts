@@ -1,21 +1,27 @@
-import { Component, output } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, input, output } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '@core/services/auth.service';
 import { IconComponent } from '@shared/components/icon/icon.component';
 import { LogoComponent } from '@shared/components/logo/logo.component';
 
+interface TopNavLink {
+  label: string;
+  route: string;
+  exact?: boolean;
+}
+
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [FormsModule, RouterLink, IconComponent, LogoComponent],
+  imports: [FormsModule, RouterLink, RouterLinkActive, IconComponent, LogoComponent],
   template: `
     <header
       class="sticky top-0 z-30 h-16 shrink-0 flex items-center gap-3 px-4 sm:px-6
              bg-surface-dark/85 backdrop-blur-xl border-b border-hairline"
     >
-      <!-- Mobile: menu + compact brand -->
+      <!-- Mobile: menu (always, opens the drawer regardless of layout mode) -->
       <button
         type="button"
         (click)="menuClick.emit()"
@@ -25,12 +31,29 @@ import { LogoComponent } from '@shared/components/logo/logo.component';
         <app-icon name="menu" class="w-5 h-5" />
       </button>
 
-      <a routerLink="/dashboard" class="lg:hidden" aria-label="CineTrack home">
+      <!-- Brand: on the landing page the sidebar is hidden on desktop, so the
+           navbar carries the logo there too; elsewhere it's mobile-only. -->
+      <a routerLink="/dashboard" [class]="showNavLinks() ? '' : 'lg:hidden'" aria-label="CineTrack home">
         <app-logo size="sm" [showWordmark]="false" />
       </a>
 
+      @if (showNavLinks()) {
+        <nav class="hidden lg:flex items-center gap-6 ml-2 shrink-0">
+          @for (link of navLinks; track link.route) {
+            <a
+              [routerLink]="link.route"
+              [routerLinkActiveOptions]="{ exact: !!link.exact }"
+              routerLinkActive="!text-primary"
+              class="text-[14px] font-medium text-text-secondary hover:text-text-primary transition-colors"
+            >
+              {{ link.label }}
+            </a>
+          }
+        </nav>
+      }
+
       <!-- Search -->
-      <div class="flex-1 flex justify-center lg:justify-start">
+      <div class="flex-1 flex justify-center">
         <div class="relative w-full max-w-md">
           <app-icon
             name="search"
@@ -72,8 +95,18 @@ import { LogoComponent } from '@shared/components/logo/logo.component';
   `,
 })
 export class NavbarComponent {
+  /** When true (the landing/dashboard page), shows brand + nav links inline since the sidebar rail is hidden there on desktop. */
+  showNavLinks = input(false);
   menuClick = output<void>();
   searchQuery = '';
+
+  navLinks: TopNavLink[] = [
+    { label: 'Home', route: '/dashboard', exact: true },
+    { label: 'Movies', route: '/movies' },
+    { label: 'TV Shows', route: '/tv-shows' },
+    { label: 'Watchlist', route: '/watchlist' },
+    { label: 'Discover', route: '/discover' },
+  ];
 
   constructor(
     public auth: AuthService,

@@ -119,6 +119,14 @@ export class DiscoverComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Routes like /movies and /tv-shows set a static `defaultTab` so this one
+    // component can serve as three distinct pages; a `?tab=` query param
+    // (e.g. links from the dashboard) takes priority over it when present.
+    const defaultTab = this.route.snapshot.data['defaultTab'] as Tab | undefined;
+    if (defaultTab) {
+      this.activeTab.set(defaultTab);
+    }
+
     this.route.queryParams.subscribe((params) => {
       if (params['q']) {
         this.searchQuery = params['q'];

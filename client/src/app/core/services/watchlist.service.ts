@@ -34,8 +34,8 @@ export class WatchlistService {
     notes?: string;
   }): Observable<WatchlistItem> {
     return this.api
-      .post<WatchlistItem>('/watchlist', data)
-      .pipe(map((res) => res.data));
+      .post<{ item: WatchlistItem }>('/watchlist', data)
+      .pipe(map((res) => res.data.item));
   }
 
   update(
@@ -43,8 +43,8 @@ export class WatchlistService {
     data: { status?: WatchStatus; progress?: WatchProgress; notes?: string },
   ): Observable<WatchlistItem> {
     return this.api
-      .patch<WatchlistItem>(`/watchlist/${id}`, data)
-      .pipe(map((res) => res.data));
+      .patch<{ item: WatchlistItem }>(`/watchlist/${id}`, data)
+      .pipe(map((res) => res.data.item));
   }
 
   remove(id: string): Observable<void> {

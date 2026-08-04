@@ -58,6 +58,9 @@ export interface TmdbTvDetails extends TmdbMedia {
   status: string;
   episode_run_time: number[];
   created_by: { id: number; name: string }[];
+  networks?: { id: number; name: string; logo_path: string | null }[];
+  next_episode_to_air: TmdbEpisode | null;
+  last_episode_to_air: TmdbEpisode | null;
   credits?: {
     cast: TmdbCastMember[];
     crew: TmdbCrewMember[];
@@ -68,6 +71,16 @@ export interface TmdbTvDetails extends TmdbMedia {
   recommendations?: {
     results: TmdbMedia[];
   };
+}
+
+export interface TmdbEpisode {
+  id: number;
+  name: string;
+  overview: string;
+  air_date: string | null;
+  episode_number: number;
+  season_number: number;
+  still_path: string | null;
 }
 
 export interface TmdbCastMember {

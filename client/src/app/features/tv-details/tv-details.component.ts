@@ -1,10 +1,16 @@
 import { Component, OnInit, signal, input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { TmdbService } from '@core/services/tmdb.service';
 import { WatchlistService } from '@core/services/watchlist.service';
 import { FavoritesService } from '@core/services/favorites.service';
 import { ToastService } from '@core/services/toast.service';
-import { TmdbTvDetails, TmdbMedia } from '@core/models/movie.model';
+import {
+  TmdbTvDetails,
+  TmdbMedia,
+  WatchStatus,
+  WATCH_STATUS_LABELS,
+} from '@core/models/movie.model';
 import { MovieCardComponent } from '@shared/components/movie-card/movie-card.component';
 import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
 import { IconComponent } from '@shared/components/icon/icon.component';
@@ -14,7 +20,7 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
 @Component({
   selector: 'app-tv-details',
   standalone: true,
-  imports: [MovieCardComponent, EmptyStateComponent, IconComponent],
+  imports: [FormsModule, MovieCardComponent, EmptyStateComponent, IconComponent],
   template: `
     @if (show(); as s) {
       <div class="animate-fade-in">
@@ -78,10 +84,23 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
               </div>
 
               <div class="mt-5 flex flex-wrap items-center gap-3">
-                <button type="button" (click)="addToWatchlist()" class="btn-primary">
-                  <app-icon name="plus" class="w-4 h-4" />
-                  Watchlist
-                </button>
+                <div class="relative">
+                  <select
+                    [ngModel]="null"
+                    (ngModelChange)="addToWatchlist($event)"
+                    aria-label="Add to watchlist with status"
+                    class="btn-primary appearance-none pr-9 cursor-pointer"
+                  >
+                    <option [ngValue]="null" disabled>+ Watchlist</option>
+                    @for (status of watchStatuses; track status) {
+                      <option [ngValue]="status">{{ statusLabels[status] }}</option>
+                    }
+                  </select>
+                  <app-icon
+                    name="chevron-down"
+                    class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-surface-deep"
+                  />
+                </div>
                 <button
                   type="button"
                   (click)="addToFavorites()"
@@ -251,6 +270,9 @@ export class TvDetailsComponent implements OnInit {
     { key: 'similar' as DetailsTab, label: 'Similar' },
   ];
 
+  watchStatuses: WatchStatus[] = ['plan_to_watch', 'watching', 'completed', 'dropped'];
+  statusLabels = WATCH_STATUS_LABELS;
+
   constructor(
     public tmdb: TmdbService,
     private watchlistService: WatchlistService,
@@ -294,11 +316,11 @@ export class TvDetailsComponent implements OnInit {
     return String(count);
   }
 
-  addToWatchlist(): void {
+  addToWatchlist(status: WatchStatus | null): void {
     const s = this.show();
-    if (!s) return;
-    this.watchlistService.add({ tmdbId: s.id, mediaType: 'tv' }).subscribe({
-      next: () => this.toast.success('Added to watchlist!'),
+    if (!s || !status) return;
+    this.watchlistService.add({ tmdbId: s.id, mediaType: 'tv', status }).subscribe({
+      next: () => this.toast.success(`Added to watchlist as "${this.statusLabels[status]}"`),
       error: (err) => this.toast.error(err.error?.error?.message || 'Failed'),
     });
   }

@@ -342,9 +342,9 @@ export class CollectionsComponent implements OnInit {
     if (this.formDesc.trim()) payload['description'] = this.formDesc.trim();
     if (this.formPublic) payload['isPublic'] = true;
 
-    this.api.post<Collection>('/collections', payload).subscribe({
+    this.api.post<{ collection: Collection }>('/collections', payload).subscribe({
       next: (res) => {
-        this.collections.update((list) => [res.data, ...list]);
+        this.collections.update((list) => [res.data.collection, ...list]);
         this.formName = '';
         this.formDesc = '';
         this.formPublic = false;

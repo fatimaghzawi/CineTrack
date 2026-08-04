@@ -21,8 +21,8 @@ export class FavoritesService {
 
   add(tmdbId: number, mediaType: MediaType): Observable<FavoriteItem> {
     return this.api
-      .post<FavoriteItem>('/favorites', { tmdbId, mediaType })
-      .pipe(map((res) => res.data));
+      .post<{ favorite: FavoriteItem }>('/favorites', { tmdbId, mediaType })
+      .pipe(map((res) => res.data.favorite));
   }
 
   remove(id: string): Observable<void> {
