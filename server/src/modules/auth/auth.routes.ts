@@ -5,6 +5,12 @@ import { usersRepository } from '@modules/users';
 import { createAuthController } from './auth.controller';
 import { createAuthService } from './auth.service';
 
+/** Stricter limits for credential endpoints (per IP). */
+const authRateLimit = {
+  max: 10,
+  timeWindow: '1 minute',
+} as const;
+
 const authUserSchema = {
   type: 'object',
   required: ['id', 'email', 'displayName'],
@@ -38,9 +44,13 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/register',
     {
+      config: {
+        rateLimit: authRateLimit,
+      },
       schema: {
         tags: ['Auth'],
         summary: 'Register a new user',
+        description: 'Rate limited: 10 requests per IP per minute.',
         body: {
           type: 'object',
           required: ['email', 'password', 'displayName'],
@@ -61,9 +71,13 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/login',
     {
+      config: {
+        rateLimit: authRateLimit,
+      },
       schema: {
         tags: ['Auth'],
         summary: 'Login with email and password',
+        description: 'Rate limited: 10 requests per IP per minute.',
         body: {
           type: 'object',
           required: ['email', 'password'],
