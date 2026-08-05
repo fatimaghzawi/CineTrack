@@ -42,17 +42,20 @@ export class TmdbService {
       .pipe(map((res) => res.data));
   }
 
-  discoverMovies(page = 1, sortBy?: string): Observable<TmdbSearchResults> {
+  /** `withGenres` is a comma-separated list of TMDb genre ids, e.g. '28' or '28,53'. */
+  discoverMovies(page = 1, sortBy?: string, withGenres?: string): Observable<TmdbSearchResults> {
     const params: Record<string, string | number> = { page };
     if (sortBy) params['sortBy'] = sortBy;
+    if (withGenres) params['withGenres'] = withGenres;
     return this.api
       .get<TmdbSearchResults>('/tmdb/discover/movie', params)
       .pipe(map((res) => res.data));
   }
 
-  discoverTv(page = 1, sortBy?: string): Observable<TmdbSearchResults> {
+  discoverTv(page = 1, sortBy?: string, withGenres?: string): Observable<TmdbSearchResults> {
     const params: Record<string, string | number> = { page };
     if (sortBy) params['sortBy'] = sortBy;
+    if (withGenres) params['withGenres'] = withGenres;
     return this.api
       .get<TmdbSearchResults>('/tmdb/discover/tv', params)
       .pipe(map((res) => res.data));

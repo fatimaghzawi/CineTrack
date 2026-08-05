@@ -6,8 +6,9 @@ import { DatePipe } from '@angular/common';
 import { ApiService } from '@core/services/api.service';
 import { TmdbService } from '@core/services/tmdb.service';
 import { ToastService } from '@core/services/toast.service';
-import { Collection, TmdbMedia } from '@core/models/movie.model';
+import { Collection, CollectionItemRef, TmdbMedia } from '@core/models/movie.model';
 import { PaginatedData } from '@core/models/api-response.model';
+import { MediaSearchComponent } from '@shared/components/media-search/media-search.component';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
 import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
 import { IconComponent } from '@shared/components/icon/icon.component';
@@ -19,6 +20,7 @@ import { IconComponent } from '@shared/components/icon/icon.component';
     FormsModule,
     RouterLink,
     DatePipe,
+    MediaSearchComponent,
     SkeletonLoaderComponent,
     EmptyStateComponent,
     IconComponent,
@@ -218,20 +220,44 @@ import { IconComponent } from '@shared/components/icon/icon.component';
               <p class="text-sm leading-relaxed text-text-secondary mb-5">{{ col.description }}</p>
             }
 
+            <!-- Add a title by name -->
+            <div class="p-3.5 rounded-xl bg-surface-card border border-hairline mb-5">
+              <span class="label">Add a title</span>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex-1 min-w-0">
+                  <app-media-search
+                    [(selected)]="pickedToAdd"
+                    placeholder="Search by title, e.g. &quot;spider&quot;"
+                  />
+                </div>
+                <button
+                  type="button"
+                  (click)="addItem(col)"
+                  [disabled]="!pickedToAdd() || adding()"
+                  class="btn-primary shrink-0 sm:self-start disabled:opacity-40
+                         disabled:cursor-not-allowed"
+                >
+                  <app-icon name="plus" class="w-4 h-4" />
+                  {{ adding() ? 'Adding...' : 'Add' }}
+                </button>
+              </div>
+            </div>
+
             @if (col.items.length === 0) {
               <p class="py-10 text-center text-sm text-text-muted">
-                No items in this collection yet.
+                No items in this collection yet — search above to add one.
               </p>
             } @else {
               <ul class="space-y-2.5">
                 @for (item of col.items; track item.tmdbId) {
-                  <li>
+                  <li
+                    class="flex items-center gap-1 rounded-xl bg-surface-card border
+                           border-hairline transition-colors duration-200 hover:border-primary/40"
+                  >
                     <a
                       [routerLink]="'/' + item.mediaType + '/' + item.tmdbId"
                       (click)="selectedCollection.set(null)"
-                      class="flex items-center gap-3.5 p-2.5 rounded-xl bg-surface-card
-                             border border-hairline transition-all duration-200 ease-smooth
-                             hover:border-primary/40"
+                      class="flex-1 min-w-0 flex items-center gap-3.5 p-2.5"
                     >
                       <span
                         class="w-10 h-14 shrink-0 rounded-lg overflow-hidden bg-surface-elevated"
@@ -259,6 +285,16 @@ import { IconComponent } from '@shared/components/icon/icon.component';
                       </span>
                       <app-icon name="chevron-right" class="w-4 h-4 text-text-muted shrink-0" />
                     </a>
+
+                    <button
+                      type="button"
+                      (click)="removeItem(col, item)"
+                      [attr.aria-label]="'Remove title from ' + col.name"
+                      class="btn-round h-9 w-9 shrink-0 mr-1.5 hover:!text-red-400
+                             hover:!bg-red-500/10"
+                    >
+                      <app-icon name="trash" class="w-4 h-4" />
+                    </button>
                   </li>
                 }
               </ul>
@@ -276,6 +312,10 @@ export class CollectionsComponent implements OnInit {
   showForm = signal(false);
   saving = signal(false);
   selectedCollection = signal<Collection | null>(null);
+
+  /** Title chosen in the detail dialog's search box, pending "Add". */
+  pickedToAdd = signal<TmdbMedia | null>(null);
+  adding = signal(false);
 
   formName = '';
   formDesc = '';
@@ -360,7 +400,62 @@ export class CollectionsComponent implements OnInit {
   }
 
   selectCollection(collection: Collection): void {
+    this.pickedToAdd.set(null);
     this.selectedCollection.set(collection);
+  }
+
+  addItem(collection: Collection): void {
+    const media = this.pickedToAdd();
+    if (!media || this.adding()) return;
+
+    const mediaType = media.media_type ?? 'movie';
+    if (collection.items.some((item) => item.tmdbId === media.id)) {
+      this.toast.error(`${this.tmdb.getTitle(media)} is already in this collection`);
+      return;
+    }
+
+    this.adding.set(true);
+    this.api
+      .post<{ collection: Collection }>(`/collections/${collection.id}/items`, {
+        tmdbId: media.id,
+        mediaType,
+      })
+      .subscribe({
+        next: (res) => {
+          // The poster is already loaded — seed the cache so the new row renders
+          // its artwork without the movie-then-tv probe loadCollections() does.
+          this.coverCache.update((c) => new Map(c).set(media.id, media));
+          this.applyCollection(res.data.collection);
+          this.pickedToAdd.set(null);
+          this.adding.set(false);
+          this.toast.success(`Added ${this.tmdb.getTitle(media)}`);
+        },
+        error: (err) => {
+          this.adding.set(false);
+          this.toast.error(err.error?.error?.message || 'Failed to add title');
+        },
+      });
+  }
+
+  removeItem(collection: Collection, item: CollectionItemRef): void {
+    this.api
+      .delete<{ collection: Collection }>(`/collections/${collection.id}/items`, {
+        tmdbId: item.tmdbId,
+        mediaType: item.mediaType,
+      })
+      .subscribe({
+        next: (res) => {
+          this.applyCollection(res.data.collection);
+          this.toast.success('Title removed');
+        },
+        error: () => this.toast.error('Failed to remove title'),
+      });
+  }
+
+  /** Replace a collection in both the grid and the open dialog. */
+  private applyCollection(updated: Collection): void {
+    this.collections.update((list) => list.map((c) => (c.id === updated.id ? updated : c)));
+    this.selectedCollection.set(updated);
   }
 
   deleteCollection(collection: Collection): void {

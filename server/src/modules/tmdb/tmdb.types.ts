@@ -9,6 +9,8 @@ export type TmdbSearchParams = {
 export type TmdbDiscoverParams = {
   page?: number;
   sortBy?: string;
+  /** Comma-separated TMDb genre ids, e.g. "28" or "28,53". */
+  withGenres?: string;
 };
 
 export type TmdbTrendingParams = {

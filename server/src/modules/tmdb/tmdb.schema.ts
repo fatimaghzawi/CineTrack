@@ -21,6 +21,11 @@ export const tmdbTrendingQuerySchema = paginationQuerySchema.extend({
 
 export const tmdbDiscoverQuerySchema = paginationQuerySchema.extend({
   sortBy: z.string().trim().min(1).max(100).optional(),
+  withGenres: z
+    .string()
+    .trim()
+    .regex(/^\d+(,\d+)*$/, 'withGenres must be a comma-separated list of genre ids')
+    .optional(),
 });
 
 export type TmdbSearchQuery = z.infer<typeof tmdbSearchQuerySchema>;

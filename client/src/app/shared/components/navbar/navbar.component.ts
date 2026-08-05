@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -16,6 +16,10 @@ interface TopNavLink {
   selector: 'app-navbar',
   standalone: true,
   imports: [FormsModule, RouterLink, RouterLinkActive, IconComponent, LogoComponent],
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'menuOpen.set(false)',
+  },
   template: `
     <header
       class="sticky top-0 z-30 h-16 shrink-0 flex items-center gap-3 px-4 sm:px-6
@@ -81,15 +85,65 @@ interface TopNavLink {
           ></span>
         </button>
 
-        <a
-          routerLink="/settings"
-          class="grid place-items-center h-9 w-9 rounded-full bg-gold-gradient
-                 text-[13px] font-bold text-surface-deep
-                 ring-2 ring-transparent hover:ring-primary/40 transition-all duration-200"
-          [attr.aria-label]="'Account: ' + (auth.user()?.displayName || 'Guest')"
-        >
-          {{ userInitial() }}
-        </a>
+        <!-- Account menu -->
+        <div class="relative" #accountMenu>
+          <button
+            type="button"
+            (click)="menuOpen.set(!menuOpen())"
+            class="grid place-items-center h-9 w-9 rounded-full bg-gold-gradient
+                   text-[13px] font-bold text-surface-deep
+                   ring-2 ring-transparent hover:ring-primary/40 transition-all duration-200"
+            [class.!ring-primary]="menuOpen()"
+            [attr.aria-label]="'Account: ' + (auth.user()?.displayName || 'Guest')"
+            [attr.aria-expanded]="menuOpen()"
+            aria-haspopup="menu"
+          >
+            {{ userInitial() }}
+          </button>
+
+          @if (menuOpen()) {
+            <div
+              class="absolute right-0 top-full mt-2 w-56 z-50 p-1.5 origin-top-right
+                     bg-surface-dark border border-hairline rounded-xl shadow-pop animate-scale-in"
+              role="menu"
+            >
+              <div class="px-3 py-2.5">
+                <p class="text-[13.5px] font-semibold text-text-primary truncate">
+                  {{ auth.user()?.displayName || 'Guest' }}
+                </p>
+                <p class="text-2xs text-text-muted truncate">{{ auth.user()?.email }}</p>
+              </div>
+
+              <div class="divider !my-1"></div>
+
+              <a routerLink="/settings" (click)="menuOpen.set(false)" class="menu-item" role="menuitem">
+                <app-icon name="settings" class="w-[18px] h-[18px]" />
+                Settings
+              </a>
+              <a
+                routerLink="/statistics"
+                (click)="menuOpen.set(false)"
+                class="menu-item"
+                role="menuitem"
+              >
+                <app-icon name="chart" class="w-[18px] h-[18px]" />
+                Statistics
+              </a>
+
+              <div class="divider !my-1"></div>
+
+              <button
+                type="button"
+                (click)="onLogout()"
+                class="menu-item w-full !text-red-400 hover:!bg-red-500/10"
+                role="menuitem"
+              >
+                <app-icon name="logout" class="w-[18px] h-[18px]" />
+                Log Out
+              </button>
+            </div>
+          }
+        </div>
       </div>
     </header>
   `,
@@ -99,6 +153,10 @@ export class NavbarComponent {
   showNavLinks = input(false);
   menuClick = output<void>();
   searchQuery = '';
+
+  /** Account dropdown (avatar, top right) — distinct from the mobile drawer. */
+  menuOpen = signal(false);
+  private accountMenu = viewChild<ElementRef<HTMLElement>>('accountMenu');
 
   navLinks: TopNavLink[] = [
     { label: 'Home', route: '/dashboard', exact: true },
@@ -123,6 +181,22 @@ export class NavbarComponent {
         queryParams: { q: this.searchQuery.trim() },
       });
       this.searchQuery = '';
+    }
+  }
+
+  onLogout(): void {
+    this.menuOpen.set(false);
+    // AuthService clears the session and redirects to /login on both outcomes.
+    this.auth.logout();
+  }
+
+  /** Close the account menu on any click outside of it. */
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.menuOpen()) return;
+
+    const menu = this.accountMenu()?.nativeElement;
+    if (menu && !menu.contains(event.target as Node)) {
+      this.menuOpen.set(false);
     }
   }
 }

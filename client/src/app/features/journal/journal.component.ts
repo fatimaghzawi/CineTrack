@@ -9,6 +9,7 @@ import { TmdbService } from '@core/services/tmdb.service';
 import { ToastService } from '@core/services/toast.service';
 import { JournalEntry, TmdbMedia } from '@core/models/movie.model';
 import { PaginatedData } from '@core/models/api-response.model';
+import { MediaSearchComponent } from '@shared/components/media-search/media-search.component';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
 import { EmptyStateComponent } from '@shared/components/empty-state/empty-state.component';
 import { IconComponent } from '@shared/components/icon/icon.component';
@@ -32,6 +33,7 @@ const MOODS = [
     FormsModule,
     RouterLink,
     DatePipe,
+    MediaSearchComponent,
     SkeletonLoaderComponent,
     EmptyStateComponent,
     IconComponent,
@@ -61,39 +63,21 @@ const MOODS = [
         <div class="panel p-5 sm:p-6 mb-7 animate-slide-up">
           <h3 class="section-title mb-5">Write a Journal Entry</h3>
 
-          <div class="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label for="j-tmdb" class="label">TMDb ID</label>
-              <input
-                id="j-tmdb"
-                type="number"
-                [(ngModel)]="form.tmdbId"
-                placeholder="e.g. 550"
-                class="input-field"
-              />
-            </div>
-            <div>
-              <label for="j-type" class="label">Type</label>
-              <div class="relative">
-                <select id="j-type" [(ngModel)]="form.mediaType" class="select-field w-full">
-                  <option value="movie">Movie</option>
-                  <option value="tv">TV Show</option>
-                </select>
-                <app-icon
-                  name="chevron-down"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none"
-                />
-              </div>
-            </div>
+          <div>
+            <span class="label">Movie or TV Show</span>
+            <app-media-search
+              [(selected)]="picked"
+              placeholder="Search by title, e.g. &quot;spider&quot;"
+            />
           </div>
 
           <div class="mt-5">
-            <label for="j-title" class="label">Title</label>
+            <label for="j-title" class="label">Entry Title</label>
             <input
               id="j-title"
               type="text"
               [(ngModel)]="form.title"
-              placeholder="Give your entry a title"
+              placeholder="Optional — defaults to the title you picked"
               class="input-field"
             />
           </div>
@@ -239,9 +223,10 @@ export class JournalComponent implements OnInit {
   saving = signal(false);
   moods = MOODS;
 
+  /** The title this entry is about, chosen by name via <app-media-search>. */
+  picked = signal<TmdbMedia | null>(null);
+
   form = {
-    tmdbId: null as number | null,
-    mediaType: 'movie' as 'movie' | 'tv',
     title: '',
     body: '',
     mood: '',
@@ -287,18 +272,25 @@ export class JournalComponent implements OnInit {
   }
 
   createEntry(): void {
-    if (!this.form.tmdbId || !this.form.body.trim()) {
-      this.toast.error('TMDb ID and body are required');
+    const media = this.picked();
+    if (!media) {
+      this.toast.error('Pick a movie or TV show first');
+      return;
+    }
+    if (!this.form.body.trim()) {
+      this.toast.error('Write a few thoughts before saving');
       return;
     }
 
     this.saving.set(true);
+    // Fall back to the title's own name so entries are never listed as "Untitled".
+    const title = this.form.title.trim() || this.tmdb.getTitle(media);
     const payload: Record<string, unknown> = {
-      tmdbId: this.form.tmdbId,
-      mediaType: this.form.mediaType,
+      tmdbId: media.id,
+      mediaType: media.media_type ?? 'movie',
       body: this.form.body.trim(),
+      title,
     };
-    if (this.form.title.trim()) payload['title'] = this.form.title.trim();
     if (this.form.mood) payload['mood'] = this.form.mood;
     if (this.form.watchedAt) payload['watchedAt'] = new Date(this.form.watchedAt).toISOString();
     if (this.form.isSpoiler) payload['isSpoiler'] = true;
@@ -306,6 +298,9 @@ export class JournalComponent implements OnInit {
     this.api.post<{ entry: JournalEntry }>('/journal', payload).subscribe({
       next: (res) => {
         this.entries.update((list) => [res.data.entry, ...list]);
+        // The poster is already in hand — seed the cache so the new row shows it
+        // without a second round-trip.
+        this.mediaCache.update((c) => new Map(c).set(media.id, media));
         this.resetForm();
         this.showForm.set(false);
         this.saving.set(false);
@@ -333,9 +328,8 @@ export class JournalComponent implements OnInit {
   }
 
   private resetForm(): void {
+    this.picked.set(null);
     this.form = {
-      tmdbId: null,
-      mediaType: 'movie',
       title: '',
       body: '',
       mood: '',

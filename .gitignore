@@ -31,3 +31,6 @@ coverage/
 *.swp
 *.swo
 .cache/
+# Local demo data — contains a working account password, kept off the public repo
+DEMO_ACCOUNT.md
+server/src/scripts/

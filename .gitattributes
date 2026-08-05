@@ -1,0 +1,21 @@
+# Normalize line endings.
+#
+# Without this, `core.autocrlf=true` (the Git default on Windows) rewrites every
+# file to CRLF on checkout, while server/.prettierrc requires `endOfLine: "lf"`.
+# The result is that a fresh clone fails `npm run lint` on every source file with
+# thousands of "Delete ␍" errors. `eol=lf` overrides autocrlf so the working tree
+# matches what Prettier expects on every platform.
+* text=auto eol=lf
+
+# Binary files — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.mp4 binary
+*.webm binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

@@ -50,18 +50,18 @@ export const routes: Routes = [
       {
         path: 'movies',
         loadComponent: () =>
-          import('./features/discover/discover.component').then(
-            (m) => m.DiscoverComponent
+          import('./features/browse/browse.component').then(
+            (m) => m.BrowseComponent
           ),
-        data: { defaultTab: 'movies' },
+        data: { mediaType: 'movie' },
       },
       {
         path: 'tv-shows',
         loadComponent: () =>
-          import('./features/discover/discover.component').then(
-            (m) => m.DiscoverComponent
+          import('./features/browse/browse.component').then(
+            (m) => m.BrowseComponent
           ),
-        data: { defaultTab: 'tv' },
+        data: { mediaType: 'tv' },
       },
       {
         path: 'movie/:id',

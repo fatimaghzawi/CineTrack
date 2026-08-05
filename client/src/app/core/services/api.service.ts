@@ -35,7 +35,9 @@ export class ApiService {
     return this.http.put<ApiSuccessResponse<T>>(`${this.baseUrl}${path}`, body);
   }
 
-  delete<T>(path: string): Observable<ApiSuccessResponse<T>> {
-    return this.http.delete<ApiSuccessResponse<T>>(`${this.baseUrl}${path}`);
+  /** `body` is only needed by the few endpoints that identify a sub-resource by
+   *  payload rather than by path (e.g. removing a title from a collection). */
+  delete<T>(path: string, body?: unknown): Observable<ApiSuccessResponse<T>> {
+    return this.http.delete<ApiSuccessResponse<T>>(`${this.baseUrl}${path}`, { body });
   }
 }

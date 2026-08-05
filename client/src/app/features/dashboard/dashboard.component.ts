@@ -4,10 +4,11 @@ import { RouterLink } from '@angular/router';
 import { TmdbService } from '@core/services/tmdb.service';
 import { AuthService } from '@core/services/auth.service';
 import { TmdbMedia } from '@core/models/movie.model';
-import { MovieCardComponent } from '@shared/components/movie-card/movie-card.component';
+import { MediaRowComponent } from '@shared/components/media-row/media-row.component';
 import { MediaTileComponent } from '@shared/components/media-tile/media-tile.component';
 import { SectionHeaderComponent } from '@shared/components/section-header/section-header.component';
 import { SkeletonLoaderComponent } from '@shared/components/skeleton-loader/skeleton-loader.component';
+import { FooterComponent } from '@shared/components/footer/footer.component';
 import { IconComponent } from '@shared/components/icon/icon.component';
 
 @Component({
@@ -15,14 +16,15 @@ import { IconComponent } from '@shared/components/icon/icon.component';
   standalone: true,
   imports: [
     RouterLink,
-    MovieCardComponent,
+    MediaRowComponent,
     MediaTileComponent,
     SectionHeaderComponent,
     SkeletonLoaderComponent,
+    FooterComponent,
     IconComponent,
   ],
   template: `
-    <div class="animate-fade-in pb-10">
+    <div class="animate-fade-in">
       <!-- ══ Hero ══════════════════════════════════════════════ -->
       <section class="relative">
         @if (heroMedia(); as hero) {
@@ -172,51 +174,25 @@ import { IconComponent } from '@shared/components/icon/icon.component';
 
       <!-- ══ Trending rails ════════════════════════════════════ -->
       <div class="page-container space-y-8">
-        <section>
-          <app-section-header
-            title="Trending Movies"
-            actionLabel="See all"
-            actionRoute="/discover"
-            [actionParams]="{ tab: 'movies' }"
-          />
-          @if (loadingTrending()) {
-            <div class="poster-grid">
-              @for (i of skeletons; track i) {
-                <app-skeleton className="aspect-[2/3] w-full" />
-              }
-            </div>
-          } @else {
-            <div class="poster-grid">
-              @for (movie of trendingMovies(); track movie.id) {
-                <app-movie-card [media]="movie" />
-              }
-            </div>
-          }
-        </section>
+        <app-media-row
+          title="Trending Movies"
+          actionLabel="See all"
+          actionRoute="/movies"
+          [items]="trendingMovies()"
+          [loading]="loadingTrending()"
+        />
 
-        <section>
-          <app-section-header
-            title="Trending TV Shows"
-            actionLabel="See all"
-            actionRoute="/discover"
-            [actionParams]="{ tab: 'tv' }"
-          />
-          @if (loadingTrending()) {
-            <div class="poster-grid">
-              @for (i of skeletons; track i) {
-                <app-skeleton className="aspect-[2/3] w-full" />
-              }
-            </div>
-          } @else {
-            <div class="poster-grid">
-              @for (show of trendingTv(); track show.id) {
-                <app-movie-card [media]="show" />
-              }
-            </div>
-          }
-        </section>
+        <app-media-row
+          title="Trending TV Shows"
+          actionLabel="See all"
+          actionRoute="/tv-shows"
+          [items]="trendingTv()"
+          [loading]="loadingTrending()"
+        />
       </div>
     </div>
+
+    <app-footer />
   `,
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -238,8 +214,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   progressValues = [65, 30, 55, 40];
   remainingTime = ['45m left', '18m left', '32m left', '26m left'];
 
-  skeletons = Array.from({ length: 6 }, (_, i) => i);
-
   private rotation: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -259,7 +233,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.tmdb.getTrending('movie', 'week').subscribe({
       next: (res) => {
-        const movies = res.results.slice(0, 12).map((m) => ({ ...m, media_type: 'movie' as const }));
+        const movies = res.results.slice(0, 18).map((m) => ({ ...m, media_type: 'movie' as const }));
         this.trendingMovies.set(movies);
         this.heroPool.set(movies.filter((m) => !!m.backdrop_path).slice(0, 4));
         this.startRotation();
@@ -268,7 +242,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.tmdb.getTrending('tv', 'week').subscribe({
       next: (res) => {
-        const shows = res.results.slice(0, 12).map((t) => ({ ...t, media_type: 'tv' as const }));
+        const shows = res.results.slice(0, 18).map((t) => ({ ...t, media_type: 'tv' as const }));
         this.trendingTv.set(shows);
         this.continueWatching.set(shows.slice(0, 4));
         this.loadingTrending.set(false);

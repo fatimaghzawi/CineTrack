@@ -300,6 +300,26 @@
     @apply border-t border-hairline;
   }
 
+  /* Row in a dropdown menu (account menu, context menus) */
+  .menu-item {
+    @apply flex items-center gap-3 h-10 px-3 rounded-lg
+           text-[13.5px] font-medium text-text-secondary text-left
+           transition-colors duration-200 ease-smooth
+           hover:bg-surface-card hover:text-text-primary;
+  }
+
+  /* Scroll arrow floating over a media row; hidden below md (touch scrolls).
+     Vertically centred on the poster art rather than the whole card, since the
+     title/rating row hangs below it. */
+  .row-arrow {
+    @apply hidden md:grid place-items-center absolute z-10 top-[38%] -translate-y-1/2
+           h-10 w-10 rounded-full
+           bg-surface-dark/90 backdrop-blur-md ring-1 ring-hairline shadow-pop
+           text-text-primary transition-all duration-200 ease-smooth
+           opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100
+           hover:bg-surface-elevated hover:text-primary;
+  }
+
   /* Responsive poster grid — 6 across on desktop, per reference */
   .poster-grid {
     @apply grid gap-4 sm:gap-5

@@ -51,6 +51,7 @@ export class TmdbController {
     const data = await this.service.discoverMovies({
       page: query.page,
       sortBy: query.sortBy,
+      withGenres: query.withGenres,
     });
     return success(data);
   }
@@ -60,6 +61,7 @@ export class TmdbController {
     const data = await this.service.discoverTv({
       page: query.page,
       sortBy: query.sortBy,
+      withGenres: query.withGenres,
     });
     return success(data);
   }

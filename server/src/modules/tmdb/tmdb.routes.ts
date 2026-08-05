@@ -107,6 +107,7 @@ const tmdbRoutes: FastifyPluginAsync = async (fastify) => {
           properties: {
             page: { type: 'integer', minimum: 1 },
             sortBy: { type: 'string' },
+            withGenres: { type: 'string' },
           },
         },
         response: { 200: tmdbPayloadResponse },
@@ -126,6 +127,7 @@ const tmdbRoutes: FastifyPluginAsync = async (fastify) => {
           properties: {
             page: { type: 'integer', minimum: 1 },
             sortBy: { type: 'string' },
+            withGenres: { type: 'string' },
           },
         },
         response: { 200: tmdbPayloadResponse },

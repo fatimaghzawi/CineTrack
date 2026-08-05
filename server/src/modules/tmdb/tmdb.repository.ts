@@ -54,6 +54,7 @@ export class TmdbRepository {
       query: {
         page: params.page ?? 1,
         sort_by: params.sortBy ?? 'popularity.desc',
+        with_genres: params.withGenres,
       },
     });
   }
@@ -64,6 +65,7 @@ export class TmdbRepository {
       query: {
         page: params.page ?? 1,
         sort_by: params.sortBy ?? 'popularity.desc',
+        with_genres: params.withGenres,
       },
     });
   }
