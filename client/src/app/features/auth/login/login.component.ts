@@ -23,7 +23,7 @@ import { ToastService } from '@core/services/toast.service';
               playsinline
               poster="assets/videos/Cinetrack-poster.svg"
             >
-              <source src="assets/videos/Cinetrack.mp4" type="video/mp4" />
+              <source src="assets/videos/CineTrack.mp4" type="video/mp4" />
             </video>
 
             <!-- Dark overlay for contrast -->
