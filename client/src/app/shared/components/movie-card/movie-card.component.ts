@@ -8,6 +8,11 @@ import { IconComponent } from '@shared/components/icon/icon.component';
 /**
  * Poster tile — 2:3 artwork, yellow "watched" check, title + rating/year row.
  * The core grid unit across Discover, Watchlist, Favorites and Similar rails.
+ *
+ * A good example of a small, reusable "dumb" component: it owns no state
+ * of its own and no service calls — everything it renders comes in through
+ * `input()`s, and the same tile gets reused across ~8 different feature
+ * pages just by passing different `media` values in.
  */
 @Component({
   selector: 'app-movie-card',
@@ -75,6 +80,12 @@ import { IconComponent } from '@shared/components/icon/icon.component';
   `,
 })
 export class MovieCardComponent {
+  // input() is the signal-based replacement for the older @Input() decorator
+  // (Angular 17.1+). `.required<T>()` means the parent *must* pass this in
+  // (e.g. <app-movie-card [media]="movie" />) — Angular errors at compile
+  // time if a template uses this component without it. The other two are
+  // optional with defaults, used like:
+  // <app-movie-card [media]="item" [showWatchedBadge]="true" />
   media = input.required<TmdbMedia>();
   showWatchedBadge = input(false);
   episodeInfo = input('');

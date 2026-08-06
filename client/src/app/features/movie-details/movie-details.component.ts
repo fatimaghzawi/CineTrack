@@ -1,3 +1,15 @@
+/**
+ * Movie details page — a fuller example of a standalone Angular component:
+ * route-param input, signal-based state, the modern `@if`/`@for`/`@switch`
+ * template control-flow syntax (Angular 17+, replacing the older
+ * `*ngIf`/`*ngFor`/`*ngSwitch` structural directives), and composing
+ * multiple injected services.
+ *
+ * Because app.config.ts enables `withComponentInputBinding()`, the `:id`
+ * route parameter from app.routes.ts (`movie/:id`) is bound straight to
+ * the `id` input below — no manual `ActivatedRoute.paramMap.subscribe(...)`
+ * needed just to read a route param.
+ */
 import { Component, OnInit, signal, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -20,8 +32,17 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
 @Component({
   selector: 'app-movie-details',
   standalone: true,
+  // Every template symbol used below (app-icon, app-movie-card, ngModel...)
+  // has to be explicitly imported here — standalone components declare
+  // their own dependencies instead of inheriting a shared NgModule's.
   imports: [FormsModule, MovieCardComponent, EmptyStateComponent, IconComponent],
   template: `
+    <!--
+      @if (movie(); as m) — evaluates the movie() signal once and aliases
+      the result to template variable "m" for the rest of this block, so
+      the loading spinner in @else only shows while movie() is still null,
+      and every {{ m.xxx }} below doesn't have to call movie() repeatedly.
+    -->
     @if (movie(); as m) {
       <div class="animate-fade-in">
         <!-- Ambient backdrop wash -->
@@ -102,6 +123,13 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
                     Play
                   </a>
                 }
+                <!--
+                  A <select> used as an action menu rather than a plain form
+                  field: [ngModel]="null" always resets it to the placeholder
+                  option after each pick, and (ngModelChange) fires
+                  addToWatchlist() with whichever WatchStatus was chosen —
+                  see the class below for what happens with that value.
+                -->
                 <div class="relative">
                   <select
                     [ngModel]="null"
@@ -176,7 +204,12 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
             </div>
           </div>
 
-          <!-- Tab panels -->
+          <!--
+            @switch/@case — Angular's control-flow equivalent of a JS
+            switch statement, used here to render exactly one tab panel
+            based on the activeTab() signal instead of four separate @if
+            blocks that would each need their own negated conditions.
+          -->
           <div class="mt-7 pb-10">
             @switch (activeTab()) {
               @case ('overview') {
@@ -284,8 +317,16 @@ type DetailsTab = 'overview' | 'cast' | 'reviews' | 'similar';
   `,
 })
 export class MovieDetailsComponent implements OnInit {
+  // input.required<string>() declares a signal-based component input that
+  // *must* be supplied — here it's populated automatically from the route's
+  // `:id` segment (thanks to withComponentInputBinding() in app.config.ts),
+  // not passed down from a parent component template the way inputs
+  // normally are.
   id = input.required<string>();
 
+  // Local component state, all as signals — movie() starts null (nothing
+  // fetched yet), which is exactly what the @if/@else in the template
+  // switches on to show a spinner vs. the real content.
   movie = signal<TmdbMovieDetails | null>(null);
   trailerKey = signal('');
   activeTab = signal<DetailsTab>('overview');
@@ -300,6 +341,10 @@ export class MovieDetailsComponent implements OnInit {
   watchStatuses: WatchStatus[] = ['plan_to_watch', 'watching', 'completed', 'dropped'];
   statusLabels = WATCH_STATUS_LABELS;
 
+  // Four separate services injected via the constructor — each handles one
+  // concern (TMDb reads, watchlist writes, favorites writes, toasts) and
+  // none of them know about each other; this component is what composes
+  // them together for this one page.
   constructor(
     public tmdb: TmdbService,
     private watchlistService: WatchlistService,
@@ -307,6 +352,8 @@ export class MovieDetailsComponent implements OnInit {
     private toast: ToastService,
   ) {}
 
+  // Data fetching happens in ngOnInit, not the constructor — by this point
+  // Angular guarantees `id` (the route-bound input) has already been set.
   ngOnInit(): void {
     this.tmdb.getMovie(Number(this.id())).subscribe({
       next: (movie) => {

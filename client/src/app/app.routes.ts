@@ -1,3 +1,15 @@
+/**
+ * Route table for the whole app — Angular's client-side router matches the
+ * browser URL against this array and swaps the component shown in
+ * `<router-outlet>` accordingly, without a full page reload.
+ *
+ * Every route below uses `loadComponent` with a dynamic `import()`. This is
+ * Angular's lazy-loading mechanism: the component's code is only downloaded
+ * when the user actually navigates to that route, instead of all being
+ * bundled into the initial page load. Each lazily-loaded component becomes
+ * its own small JS chunk (visible in `ng build` output as e.g.
+ * "watchlist-component | 7.80 kB").
+ */
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
@@ -5,12 +17,18 @@ import { guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
+    // Visiting the site root ('') redirects straight to /dashboard.
+    // `pathMatch: 'full'` means this only matches an *exactly empty* URL,
+    // not every route that merely starts with '' (which would be all of them).
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full',
   },
   {
     path: 'login',
+    // `canActivate` runs a route guard before the route is allowed to load.
+    // guestGuard blocks already-logged-in users from re-visiting /login —
+    // see core/guards/auth.guard.ts for the actual check.
     canActivate: [guestGuard],
     loadComponent: () =>
       import('./features/auth/login/login.component').then(
@@ -26,6 +44,12 @@ export const routes: Routes = [
       ),
   },
   {
+    // A second route also matching the empty path, but gated by authGuard
+    // instead of guestGuard, and it loads the app shell (sidebar + navbar)
+    // as a *parent* route with its own `children`. Every child route below
+    // renders inside LayoutComponent's <router-outlet>, so the sidebar/navbar
+    // stay mounted while only the inner page content swaps between them —
+    // this is Angular's nested-routing pattern.
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -53,6 +77,10 @@ export const routes: Routes = [
           import('./features/browse/browse.component').then(
             (m) => m.BrowseComponent
           ),
+        // `data` attaches static, route-specific config that isn't part of
+        // the URL. BrowseComponent reads `route.snapshot.data['mediaType']`
+        // to know whether it's rendering the movies or TV shows page —
+        // one component, two routes, differentiated by route data.
         data: { mediaType: 'movie' },
       },
       {
@@ -64,6 +92,9 @@ export const routes: Routes = [
         data: { mediaType: 'tv' },
       },
       {
+        // ':id' is a route parameter — matches e.g. /movie/550, and the
+        // component reads the actual value (550) via an `input()` bound to
+        // the route param (see app.config.ts's withComponentInputBinding()).
         path: 'movie/:id',
         loadComponent: () =>
           import('./features/movie-details/movie-details.component').then(
@@ -129,6 +160,8 @@ export const routes: Routes = [
     ],
   },
   {
+    // Wildcard — catches any URL that matched nothing above (typos, dead
+    // links, etc.) and sends the user somewhere sane instead of a blank page.
     path: '**',
     redirectTo: 'dashboard',
   },

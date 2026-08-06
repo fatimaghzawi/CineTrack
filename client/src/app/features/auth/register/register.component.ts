@@ -1,3 +1,21 @@
+/**
+ * Registration page — demonstrates Angular's **template-driven forms**
+ * (as opposed to the alternative, more complex "reactive forms" API built
+ * around `FormGroup`/`FormControl`).
+ *
+ * Template-driven forms bind form fields straight to component properties
+ * with `[(ngModel)]` — Angular's "banana in a box" two-way binding syntax.
+ * `[(ngModel)]="email"` is shorthand for `[ngModel]="email" (ngModelChange)="email = $event"`:
+ * the input's value flows into `email` and back out again on every
+ * keystroke, without any FormControl object in between. This requires
+ * `FormsModule` in the component's `imports` array (see below) — ngModel
+ * isn't available on plain `<input>` elements otherwise.
+ *
+ * Validation here is deliberately manual (see onRegister()) rather than
+ * using Angular's built-in Validators — simple, readable for a small form,
+ * at the cost of not getting free per-field error states the way reactive
+ * forms' FormControl.errors would give you.
+ */
 import {
   Component,
   ElementRef,
@@ -132,6 +150,8 @@ import { ToastService } from '@core/services/toast.service';
   `,
 })
 export class RegisterComponent implements OnInit, OnDestroy {
+  // Plain component properties, not FormControls — each one is the "source
+  // of truth" its matching [(ngModel)] binding reads from and writes to.
   displayName = '';
   email = '';
   password = '';
@@ -143,6 +163,11 @@ export class RegisterComponent implements OnInit, OnDestroy {
   private mediaQuery: MediaQueryList | null = null;
   private mediaQueryHandler = (e: MediaQueryListEvent) => this.isDesktop.set(e.matches);
 
+  // viewChild() is the signal-based replacement for the older @ViewChild()
+  // decorator — it returns a signal holding a reference to the `#brandVideo`
+  // template element (or undefined before it's rendered / if the @if above
+  // hasn't rendered it yet). Reading it reactively via the signal is what
+  // lets the effect() below re-run once the video element actually appears.
   private brandVideo = viewChild<ElementRef<HTMLVideoElement>>('brandVideo');
 
   constructor(
@@ -150,6 +175,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
     private toast: ToastService,
     private router: Router,
   ) {
+    // effect() re-runs its callback automatically whenever any signal it
+    // reads changes — here, whenever brandVideo() switches from undefined
+    // to an actual element (i.e. once isDesktop() flips true and the @if
+    // block renders the <video>). This is Angular's way of running
+    // imperative side effects (touching the DOM directly, calling
+    // non-Angular browser APIs) in reaction to signal state, similar in
+    // spirit to a `useEffect` dependency array in React, but the
+    // dependencies are inferred automatically from which signals get read.
+    //
     // The video only exists once isDesktop() flips true, so this runs when the
     // query resolves. Browsers refuse to autoplay unless `muted` is set as a DOM
     // property — the bare `muted` attribute in a template is not enough — and
@@ -165,6 +199,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ngOnInit / ngOnDestroy are two of Angular's component lifecycle hooks —
+  // methods Angular calls automatically at specific points in a component's
+  // life. ngOnInit fires once, after the component's inputs are set and its
+  // own view is initialized (the right place for setup logic); ngOnDestroy
+  // fires right before Angular removes the component (the right place to
+  // clean up anything that would otherwise leak, like this event listener).
   ngOnInit(): void {
     // 1024px matches Tailwind's `lg` breakpoint
     this.mediaQuery = window.matchMedia('(min-width: 1024px)');
@@ -176,6 +216,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.mediaQuery?.removeEventListener('change', this.mediaQueryHandler);
   }
 
+  /** Manual, sequential validation — first failing rule wins and stops the submit. */
   onRegister(): void {
     if (!this.displayName || !this.email || !this.password) {
       this.toast.error('Please fill in all fields');
@@ -191,6 +232,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
     }
 
     this.loading.set(true);
+    // AuthService.register() returns an Observable — nothing happens until
+    // .subscribe() is called. The `next`/`error` callbacks here mirror a
+    // Promise's `.then`/`.catch`, but Observables (unlike Promises) can
+    // in principle emit more than once and must be actively subscribed to.
     this.auth
       .register({
         email: this.email,
