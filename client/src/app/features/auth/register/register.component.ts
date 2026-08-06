@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -11,43 +11,31 @@ import { ToastService } from '@core/services/toast.service';
   imports: [FormsModule, RouterLink],
   template: `
     <div class="min-h-screen lg:flex bg-surface-deep">
-      <!-- Brand panel: centered video with margins -->
-      <aside class="hidden lg:flex lg:w-1/2 relative items-center justify-center p-10 bg-surface-dark border-r border-surface-elevated/50">
-        <div class="relative w-full h-full max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl shadow-black/50 border border-surface-elevated/40">
-          <video
-            class="w-full h-full object-cover"
-            autoplay
-            muted
-            loop
-            playsinline
-            poster="assets/videos/Cinetrack-poster.svg"
-          >
-            <source src="assets/videos/CineTrack.mp4" type="video/mp4" />
-          </video>
+      <!-- Brand panel: centered video with margins (desktop only, not rendered on mobile) -->
+      @if (isDesktop()) {
+        <aside class="hidden lg:flex lg:w-1/2 relative items-center justify-center p-10 bg-surface-dark border-r border-surface-elevated/50">
+          <div class="relative w-full h-full max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl shadow-black/50 border border-surface-elevated/40">
+            <video
+              class="w-full h-full object-cover"
+              autoplay
+              muted
+              loop
+              playsinline
+              poster="assets/videos/Cinetrack-poster.svg"
+            >
+              <source src="assets/videos/Cinetrack.mp4" type="video/mp4" />
+            </video>
 
-          <!-- Dark overlay for contrast -->
-          <div class="absolute inset-0 bg-surface-deep/40"></div>
-          <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-surface-deep/20"></div>
-
-          <!-- Small logo mark, top-left -->
-          <!-- <div class="absolute top-6 left-6 flex items-center gap-2.5">
-            <img src="assets/images/Logo.png" alt="CineTrack" class="w-9 h-9 object-contain" />
-            <span class="text-lg font-bold text-text-primary tracking-tight">
-              Cine<span class="text-primary">Track</span>
-            </span>
-          </div> -->
-        </div>
-      </aside>
+            <!-- Dark overlay for contrast -->
+            <div class="absolute inset-0 bg-surface-deep/40"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-surface-deep/20"></div>
+          </div>
+        </aside>
+      }
 
       <!-- Form -->
       <main class="flex-1 grid place-items-center p-6 sm:p-12">
         <div class="w-full max-w-md animate-fade-in">
-          <!-- Mobile logo -->
-          <div class="lg:hidden flex items-center gap-2.5 mb-10">
-            <img src="assets/images/logo-icon.png" alt="CineTrack" class="w-10 h-10 object-contain" />
-            <span class="text-xl font-bold">Cine<span class="text-primary">Track</span></span>
-          </div>
-
           <h2 class="text-3xl font-bold text-text-primary mb-2">Create Account</h2>
           <p class="text-text-secondary mb-8">Join CineTrack and start your journey</p>
 
@@ -134,19 +122,34 @@ import { ToastService } from '@core/services/toast.service';
     </div>
   `,
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit, OnDestroy {
   displayName = '';
   email = '';
   password = '';
   confirmPassword = '';
   loading = signal(false);
   showPassword = signal(false);
+  isDesktop = signal(false);
+
+  private mediaQuery: MediaQueryList | null = null;
+  private mediaQueryHandler = (e: MediaQueryListEvent) => this.isDesktop.set(e.matches);
 
   constructor(
     private auth: AuthService,
     private toast: ToastService,
     private router: Router,
   ) {}
+
+  ngOnInit(): void {
+    // 1024px matches Tailwind's `lg` breakpoint
+    this.mediaQuery = window.matchMedia('(min-width: 1024px)');
+    this.isDesktop.set(this.mediaQuery.matches);
+    this.mediaQuery.addEventListener('change', this.mediaQueryHandler);
+  }
+
+  ngOnDestroy(): void {
+    this.mediaQuery?.removeEventListener('change', this.mediaQueryHandler);
+  }
 
   onRegister(): void {
     if (!this.displayName || !this.email || !this.password) {
