@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  OnDestroy,
+  effect,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -16,9 +24,10 @@ import { ToastService } from '@core/services/toast.service';
         <aside class="hidden lg:flex lg:w-1/2 relative items-center justify-center p-10 bg-surface-dark border-r border-surface-elevated/50">
           <div class="relative w-full h-full max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl shadow-black/50 border border-surface-elevated/40">
             <video
+              #brandVideo
               class="w-full h-full object-cover"
               autoplay
-              muted
+              [muted]="true"
               loop
               playsinline
               poster="assets/videos/Cinetrack-poster.svg"
@@ -134,11 +143,27 @@ export class RegisterComponent implements OnInit, OnDestroy {
   private mediaQuery: MediaQueryList | null = null;
   private mediaQueryHandler = (e: MediaQueryListEvent) => this.isDesktop.set(e.matches);
 
+  private brandVideo = viewChild<ElementRef<HTMLVideoElement>>('brandVideo');
+
   constructor(
     private auth: AuthService,
     private toast: ToastService,
     private router: Router,
-  ) {}
+  ) {
+    // The video only exists once isDesktop() flips true, so this runs when the
+    // query resolves. Browsers refuse to autoplay unless `muted` is set as a DOM
+    // property — the bare `muted` attribute in a template is not enough — and
+    // some still need an explicit play() call.
+    effect(() => {
+      const video = this.brandVideo()?.nativeElement;
+      if (!video) return;
+
+      video.muted = true;
+      video.play().catch(() => {
+        // Autoplay refused (e.g. a strict browser setting); the poster stays up.
+      });
+    });
+  }
 
   ngOnInit(): void {
     // 1024px matches Tailwind's `lg` breakpoint
